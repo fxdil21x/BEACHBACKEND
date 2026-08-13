@@ -12,6 +12,8 @@ import reportRoutes from './routes/reportRoutes.js';
 import publicRoutes from './routes/publicRoutes.js';
 import { errorMiddleware } from './middleware/errorMiddleware.js';
 import { generalApiRateLimit } from './middleware/rateLimitMiddleware.js';
+import { requireDBConnection } from './middleware/dbMiddleware.js';
+import { getDBStatus } from './config/db.js';
 
 const app = express();
 
@@ -36,8 +38,10 @@ app.use(mongoSanitize());
 app.use(generalApiRateLimit);
 
 app.get('/api/health', (_req, res) => {
-  res.json({ status: 'ok', service: 'Muzhappilangad Beach API' });
+  res.json({ status: 'ok', service: 'Muzhappilangad Beach API', db: getDBStatus() });
 });
+
+app.use('/api', requireDBConnection);
 
 app.use('/api/auth', authRoutes);
 app.use('/api/residents', residentRoutes);
