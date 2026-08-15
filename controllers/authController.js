@@ -34,7 +34,7 @@ export const register = asyncHandler(async (req, res) => {
     performedBy: user._id,
     role: user.role,
     action: 'USER_REGISTERED',
-    targetType: 'User',
+    targetType: '',
     targetId: user._id,
   });
 

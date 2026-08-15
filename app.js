@@ -24,9 +24,12 @@ const allowedOrigins = new Set([
   'http://127.0.0.1:5173',
 ]);
 
+const isLocalDevOrigin = (origin) =>
+  /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin);
+
 app.use(cors({
   origin(origin, callback) {
-    if (!origin || allowedOrigins.has(origin)) {
+    if (!origin || allowedOrigins.has(origin) || isLocalDevOrigin(origin)) {
       return callback(null, true);
     }
     return callback(new Error('Not allowed by CORS'));
@@ -56,3 +59,5 @@ app.use('/api/public', publicRoutes);
 app.use(errorMiddleware);
 
 export default app;
+
+
