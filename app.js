@@ -19,22 +19,34 @@ const app = express();
 
 app.use(helmet());
 
-// Normalize CLIENT_URL to handle cases without protocol
+// Build allowed origins list
 const buildAllowedOrigins = () => {
   const origins = new Set([
-    'beach-blush.vercel.app',
     'http://localhost:5173',
     'http://127.0.0.1:5173',
+    'http://localhost:5174',
+    'http://127.0.0.1:5174',
+    'https://beach-blush.vercel.app',
   ]);
 
   const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
   
-  // Add both http and https versions of CLIENT_URL
-  if (!clientUrl.startsWith('http')) {
-    origins.add(`http://${clientUrl}`);
-    origins.add(`https://${clientUrl}`);
-  } else {
-    origins.add(clientUrl);
+  // Handle CLIENT_URL with or without protocol
+  if (clientUrl) {
+    if (!clientUrl.startsWith('http://') && !clientUrl.startsWith('https://')) {
+      // No protocol - add both versions
+      origins.add(`http://${clientUrl}`);
+      origins.add(`https://${clientUrl}`);
+    } else {
+      // Has protocol - add as-is
+      origins.add(clientUrl);
+      // Also add the alternative protocol version
+      if (clientUrl.startsWith('https://')) {
+        origins.add(clientUrl.replace('https://', 'http://'));
+      } else {
+        origins.add(clientUrl.replace('http://', 'https://'));
+      }
+    }
   }
 
   return origins;
@@ -42,14 +54,20 @@ const buildAllowedOrigins = () => {
 
 const allowedOrigins = buildAllowedOrigins();
 
+console.log('Allowed Origins:', Array.from(allowedOrigins));
+console.log('CLIENT_URL env:', process.env.CLIENT_URL);
+
 const isLocalDevOrigin = (origin) =>
   /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin);
 
 app.use(cors({
   origin(origin, callback) {
+    console.log('Incoming request origin:', origin);
     if (!origin || allowedOrigins.has(origin) || isLocalDevOrigin(origin)) {
+      console.log('✓ Origin allowed');
       return callback(null, true);
     }
+    console.log('✗ Origin blocked. Allowed origins:', Array.from(allowedOrigins));
     return callback(new Error('Not allowed by CORS'));
   },
   credentials: true,
