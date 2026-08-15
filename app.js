@@ -22,6 +22,7 @@ app.use(helmet());
 // Normalize CLIENT_URL to handle cases without protocol
 const buildAllowedOrigins = () => {
   const origins = new Set([
+    'beach-blush.vercel.app',
     'http://localhost:5173',
     'http://127.0.0.1:5173',
   ]);
