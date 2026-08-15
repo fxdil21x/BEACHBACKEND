@@ -18,11 +18,28 @@ import { getDBStatus } from './config/db.js';
 const app = express();
 
 app.use(helmet());
-const allowedOrigins = new Set([
-  process.env.CLIENT_URL || 'http://localhost:5173',
-  'http://localhost:5173',
-  'http://127.0.0.1:5173',
-]);
+
+// Normalize CLIENT_URL to handle cases without protocol
+const buildAllowedOrigins = () => {
+  const origins = new Set([
+    'http://localhost:5173',
+    'http://127.0.0.1:5173',
+  ]);
+
+  const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
+  
+  // Add both http and https versions of CLIENT_URL
+  if (!clientUrl.startsWith('http')) {
+    origins.add(`http://${clientUrl}`);
+    origins.add(`https://${clientUrl}`);
+  } else {
+    origins.add(clientUrl);
+  }
+
+  return origins;
+};
+
+const allowedOrigins = buildAllowedOrigins();
 
 const isLocalDevOrigin = (origin) =>
   /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin);
@@ -59,5 +76,3 @@ app.use('/api/public', publicRoutes);
 app.use(errorMiddleware);
 
 export default app;
-
-
