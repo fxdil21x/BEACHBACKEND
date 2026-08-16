@@ -1,6 +1,9 @@
-// Placeholder for Cloudinary config (Phase 2)
-export const cloudinaryConfig = {
-  cloudName: process.env.CLOUDINARY_CLOUD_NAME || '',
-  apiKey: process.env.CLOUDINARY_API_KEY || '',
-  apiSecret: process.env.CLOUDINARY_API_SECRET || '',
-};
+export function getCloudinaryConfig() {
+  return {
+    cloudName: process.env.CLOUDINARY_CLOUD_NAME || '',
+    apiKey: process.env.CLOUDINARY_API_KEY || '',
+    apiSecret: process.env.CLOUDINARY_API_SECRET || '',
+  };
+}
+
+export const cloudinaryConfig = getCloudinaryConfig();

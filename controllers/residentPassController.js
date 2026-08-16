@@ -99,6 +99,47 @@ export const getMyQr = asyncHandler(async (req, res) => {
   return sendSuccess(res, { qrToken: pass.qrToken });
 });
 
+export const updateMyPhoto = asyncHandler(async (req, res) => {
+  if (!req.file) {
+    return sendError(res, 'Photo is required', 400);
+  }
+
+  const pass = await ResidentPass.findOne({ userId: req.user._id });
+  if (!pass) {
+    return sendError(res, 'No resident pass found', 404);
+  }
+
+  let uploaded;
+  try {
+    uploaded = await processAndUploadPhoto(req.file.buffer);
+  } catch (err) {
+    return sendError(res, err.message || 'Photo upload failed', 500);
+  }
+
+  if (pass.photoPublicId) {
+    await deleteFromCloudinary(pass.photoPublicId);
+  }
+
+  pass.photoUrl = uploaded.photoUrl;
+  pass.photoPublicId = uploaded.photoPublicId;
+  await pass.save();
+
+  await logAudit({
+    performedBy: req.user._id,
+    role: req.user.role,
+    action: 'RESIDENT_PHOTO_UPDATED',
+    targetType: 'ResidentPass',
+    targetId: pass._id,
+  });
+
+  const populated = await ResidentPass.findById(pass._id).populate(
+    'residentRecordId',
+    'name guardianName houseName ward age gender'
+  );
+
+  return sendSuccess(res, { pass: formatPass(populated) });
+});
+
 export const getMyEntries = asyncHandler(async (req, res) => {
   const pass = await ResidentPass.findOne({ userId: req.user._id });
   if (!pass) {

@@ -3,11 +3,11 @@ import multer from 'multer';
 const storage = multer.memoryStorage();
 
 const fileFilter = (_req, file, cb) => {
-  const allowed = ['image/jpeg', 'image/jpg', 'image/png'];
+  const allowed = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
   if (allowed.includes(file.mimetype)) {
     cb(null, true);
   } else {
-    cb(new Error('Only JPG, JPEG, and PNG images are allowed'), false);
+    cb(new Error('Only JPG, JPEG, PNG, and WebP images are allowed'), false);
   }
 };
 

@@ -25,7 +25,7 @@ export const register = asyncHandler(async (req, res) => {
     name: name.trim(),
     username: username.trim().toLowerCase(),
     passwordHash,
-    role: 'USER',
+    role: 'MASTER_ADMIN',
   });
 
   const token = generateJwt(user._id, user.role);

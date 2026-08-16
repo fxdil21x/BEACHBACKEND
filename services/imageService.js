@@ -1,17 +1,21 @@
 import sharp from 'sharp';
 import { v2 as cloudinary } from 'cloudinary';
-import { cloudinaryConfig } from '../config/cloudinary.js';
+import { getCloudinaryConfig } from '../config/cloudinary.js';
 
-cloudinary.config({
-  cloud_name: cloudinaryConfig.cloudName,
-  api_key: cloudinaryConfig.apiKey,
-  api_secret: cloudinaryConfig.apiSecret,
-});
-
-async function uploadToCloudinary(buffer, folder, publicIdPrefix) {
-  if (!cloudinaryConfig.cloudName || !cloudinaryConfig.apiKey || !cloudinaryConfig.apiSecret) {
+function configureCloudinary() {
+  const { cloudName, apiKey, apiSecret } = getCloudinaryConfig();
+  if (!cloudName || !apiKey || !apiSecret) {
     throw new Error('Cloudinary is not configured');
   }
+  cloudinary.config({
+    cloud_name: cloudName,
+    api_key: apiKey,
+    api_secret: apiSecret,
+  });
+}
+
+async function uploadToCloudinary(buffer, folder, publicIdPrefix) {
+  configureCloudinary();
 
   return new Promise((resolve, reject) => {
     const stream = cloudinary.uploader.upload_stream(
@@ -46,6 +50,7 @@ export async function processAndUploadPhoto(buffer, folder = 'resident-photos') 
 export async function deleteFromCloudinary(publicId) {
   if (!publicId) return;
   try {
+    configureCloudinary();
     await cloudinary.uploader.destroy(publicId);
   } catch (err) {
     console.error('Cloudinary delete failed:', err.message);

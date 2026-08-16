@@ -129,7 +129,11 @@ export const publicRegisterResident = asyncHandler(async (req, res) => {
     qrToken: generateQrToken(),
   });
 
-  await User.findByIdAndUpdate(user._id, { residentPassId: pass._id });
+  const updatedUser = await User.findByIdAndUpdate(
+    user._id,
+    { residentPassId: pass._id },
+    { new: true }
+  );
 
   await logAudit({
     performedBy: user._id,
@@ -150,7 +154,7 @@ export const publicRegisterResident = asyncHandler(async (req, res) => {
     res,
     {
       token,
-      user: user.toSafeJSON(),
+      user: (updatedUser || user).toSafeJSON(),
       pass: formatPass(populated),
       qrToken: pass.qrToken,
       credentials: {
