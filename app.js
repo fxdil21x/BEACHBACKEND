@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import mongoSanitize from 'express-mongo-sanitize';
+import { UPLOADS_DIR } from './services/imageService.js';
 import authRoutes from './routes/authRoutes.js';
 import residentRoutes from './routes/residentRoutes.js';
 import residentPassRoutes from './routes/residentPassRoutes.js';
@@ -17,7 +18,20 @@ import { getDBStatus } from './config/db.js';
 
 const app = express();
 
-app.use(helmet());
+app.use(
+  helmet({
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
+  })
+);
+
+app.use(
+  '/uploads',
+  express.static(UPLOADS_DIR, {
+    setHeaders(res) {
+      res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+    },
+  })
+);
 
 // Build allowed origins list
 const buildAllowedOrigins = () => {
