@@ -5,6 +5,7 @@ import {
   publicLoginResident,
 } from '../controllers/publicController.js';
 import { getActiveAnnouncements } from '../controllers/announcementController.js';
+import { getFeatureSettings } from '../controllers/featureSettingsController.js';
 import { uploadPhoto } from '../middleware/uploadMiddleware.js';
 import { loginRateLimit } from '../middleware/rateLimitMiddleware.js';
 
@@ -14,5 +15,6 @@ router.get('/residents/search', publicSearchResidents);
 router.post('/resident-register', loginRateLimit, uploadPhoto.single('photo'), publicRegisterResident);
 router.post('/resident-login', loginRateLimit, publicLoginResident);
 router.get('/announcements', getActiveAnnouncements);
+router.get('/features', getFeatureSettings);
 
 export default router;

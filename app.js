@@ -11,6 +11,7 @@ import visitorRoutes, { entryRouter } from './routes/visitorRoutes.js';
 import masterRoutes from './routes/masterRoutes.js';
 import reportRoutes from './routes/reportRoutes.js';
 import publicRoutes from './routes/publicRoutes.js';
+import emergencyRoutes from './routes/emergencyRoutes.js';
 import { errorMiddleware } from './middleware/errorMiddleware.js';
 import { generalApiRateLimit } from './middleware/rateLimitMiddleware.js';
 import { requireDBConnection } from './middleware/dbMiddleware.js';
@@ -65,7 +66,7 @@ const buildAllowedOrigins = () => {
   return origins;
 };
 
-const allowedOrigins = buildAllowedOrigins();
+export const allowedOrigins = buildAllowedOrigins();
 
 console.log('Allowed Origins:', Array.from(allowedOrigins));
 console.log('CLIENT_URL env:', process.env.CLIENT_URL);
@@ -106,6 +107,7 @@ app.use('/api/master/resident-records', masterRoutes);
 app.use('/api/resident-records', masterRoutes);
 app.use('/api/beach-reports', reportRoutes);
 app.use('/api/public', publicRoutes);
+app.use('/api/emergency', emergencyRoutes);
 
 app.use(errorMiddleware);
 

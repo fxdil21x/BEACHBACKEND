@@ -28,6 +28,10 @@ import {
   updateAnnouncement,
   deleteAnnouncement,
 } from '../controllers/announcementController.js';
+import {
+  getFeatureSettings,
+  updateFeatureSettings,
+} from '../controllers/featureSettingsController.js';
 import { authMiddleware } from '../middleware/authMiddleware.js';
 import { requireMasterAdmin } from '../middleware/roleMiddleware.js';
 import { uploadJson } from '../middleware/uploadMiddleware.js';
@@ -38,6 +42,8 @@ router.use(authMiddleware, requireMasterAdmin);
 
 router.get('/dashboard', getDashboard);
 router.get('/analytics', getAnalyticsData);
+router.get('/features', getFeatureSettings);
+router.put('/features', updateFeatureSettings);
 router.post('/import-residents', uploadJson.single('file'), importResidents);
 router.get('/resident-records', getResidentRecordsMaster);
 router.post('/resident-records', createResidentRecord);
