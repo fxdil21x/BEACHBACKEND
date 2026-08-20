@@ -5,6 +5,7 @@ const activeEmergencies = new Map();
 
 export function initSocket(server, allowedOrigins) {
   io = new Server(server, {
+    path: '/api/socket.io',
     cors: {
       origin: (origin, callback) => {
         if (!origin || allowedOrigins.has(origin) || /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) {
