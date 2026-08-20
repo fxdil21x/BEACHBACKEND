@@ -1,5 +1,5 @@
 import Emergency from '../models/Emergency.js';
-import { triggerEmergencyEvent, claimEmergencyEvent } from '../services/socketService.js';
+import { triggerEmergencyEvent, claimEmergencyEvent, cancelEmergencyEvent } from '../services/socketService.js';
 
 export const createEmergency = async (req, res, next) => {
   try {
@@ -80,6 +80,29 @@ export const claimEmergency = async (req, res, next) => {
     res.json({
       success: true,
       message: 'Emergency claimed successfully.',
+      data: { emergencyId },
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const cancelEmergency = async (req, res, next) => {
+  try {
+    const { emergencyId } = req.params;
+
+    // Update MongoDB status to CANCELLED
+    await Emergency.findOneAndUpdate(
+      { emergencyId },
+      { status: 'CANCELLED' }
+    );
+
+    // Trigger socket broadcast to stop alarm for all admins
+    cancelEmergencyEvent(emergencyId);
+
+    res.json({
+      success: true,
+      message: 'Emergency cancelled successfully by user.',
       data: { emergencyId },
     });
   } catch (err) {

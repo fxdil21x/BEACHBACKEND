@@ -146,3 +146,14 @@ export function claimEmergencyEvent(emergencyId, adminInfo) {
     timestamp: new Date().toISOString(),
   });
 }
+
+export function cancelEmergencyEvent(emergencyId) {
+  if (!io) return;
+  activeEmergencies.delete(emergencyId);
+  io.to('admins').emit('emergency:claimed', {
+    emergencyId,
+    resolved: true,
+    cancelled: true,
+    timestamp: new Date().toISOString(),
+  });
+}
