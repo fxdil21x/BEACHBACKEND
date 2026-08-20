@@ -1,6 +1,7 @@
 import BeachReport from '../models/BeachReport.js';
 import { asyncHandler, sendSuccess, sendError } from '../utils/index.js';
 import { processAndUploadPhoto } from '../services/imageService.js';
+import { notifyNewReport, addUserReportClient, writeSseHeaders } from '../services/reportEvents.js';
 
 const VALID_CATEGORIES = [
   'Garbage', 'Overflowing Bin', 'Unsafe Driving', 'Damaged Facility',
@@ -81,7 +82,27 @@ export const createReport = asyncHandler(async (req, res) => {
     deviceInfo: deviceInfo || undefined,
   });
 
-  return sendSuccess(res, { report }, 201);
+  const populatedReport = await BeachReport.findById(report._id)
+    .populate('submittedBy', 'name username role')
+    .lean();
+
+  notifyNewReport(populatedReport || report.toObject());
+
+  return sendSuccess(res, { report: populatedReport || report }, 201);
+});
+
+export const getMyReports = asyncHandler(async (req, res) => {
+  const reports = await BeachReport.find({ submittedBy: req.user._id })
+    .sort({ createdAt: -1 })
+    .lean();
+
+  return sendSuccess(res, { reports });
+});
+
+export const streamUserReportEvents = asyncHandler(async (req, res) => {
+  writeSseHeaders(res);
+  const cleanup = addUserReportClient(req.user._id, res);
+  req.on('close', cleanup);
 });
 
 export const getReportsMaster = asyncHandler(async (req, res) => {
@@ -92,7 +113,12 @@ export const getReportsMaster = asyncHandler(async (req, res) => {
   const skip = (Math.max(1, Number(page)) - 1) * Number(limit);
 
   const [reports, total] = await Promise.all([
-    BeachReport.find(filter).sort({ createdAt: -1 }).skip(skip).limit(Number(limit)).lean(),
+    BeachReport.find(filter)
+      .populate('submittedBy', 'name username role')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(Number(limit))
+      .lean(),
     BeachReport.countDocuments(filter),
   ]);
 
@@ -101,3 +127,4 @@ export const getReportsMaster = asyncHandler(async (req, res) => {
     pagination: { page: Number(page), limit: Number(limit), total, pages: Math.ceil(total / Number(limit)) },
   });
 });
+

@@ -9,7 +9,7 @@ const residentRecordSchema = new mongoose.Schema(
     houseName: { type: String, trim: true, index: true },
     gender: { type: String, trim: true },
     age: { type: Number },
-    newSecIdNo: { type: String, required: true, unique: true, index: true, trim: true },
+    newSecIdNo: { type: String, required: false, unique: true, sparse: true, index: true, trim: true },
     ward: { type: String, trim: true, index: true },
     district: { type: String, trim: true },
     localBody: { type: String, trim: true },

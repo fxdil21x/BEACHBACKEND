@@ -7,6 +7,7 @@ import { asyncHandler, sendSuccess, sendError } from '../utils/index.js';
 import { parseQrScan } from '../services/qrService.js';
 import { buildNameSearchRegex, escapeRegex, isValidObjectId } from '../utils/validators.js';
 import { logAudit } from '../services/auditService.js';
+import { notifyReportStatusUpdated, addAdminReportClient, writeSseHeaders } from '../services/reportEvents.js';
 
 function getPhoneLast4(phone) {
   const digits = String(phone || '').replace(/\D/g, '');
@@ -362,7 +363,12 @@ export const getBeachReports = asyncHandler(async (req, res) => {
   const skip = (Math.max(1, Number(page)) - 1) * Number(limit);
 
   const [reports, total] = await Promise.all([
-    BeachReport.find(filter).sort({ createdAt: -1 }).skip(skip).limit(Number(limit)).lean(),
+    BeachReport.find(filter)
+      .populate('submittedBy', 'name username role')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(Number(limit))
+      .lean(),
     BeachReport.countDocuments(filter),
   ]);
 
@@ -385,7 +391,8 @@ export const updateBeachReportStatus = asyncHandler(async (req, res) => {
     return sendError(res, 'Invalid status', 400);
   }
 
-  const report = await BeachReport.findByIdAndUpdate(id, { status }, { new: true });
+  const report = await BeachReport.findByIdAndUpdate(id, { status }, { new: true })
+    .populate('submittedBy', 'name username role');
   if (!report) {
     return sendError(res, 'Report not found', 404);
   }
@@ -399,5 +406,14 @@ export const updateBeachReportStatus = asyncHandler(async (req, res) => {
     metadata: { status },
   });
 
+  notifyReportStatusUpdated(report);
+
   return sendSuccess(res, { report });
 });
+
+export const streamAdminReportEvents = asyncHandler(async (req, res) => {
+  writeSseHeaders(res);
+  const cleanup = addAdminReportClient(res);
+  req.on('close', cleanup);
+});
+

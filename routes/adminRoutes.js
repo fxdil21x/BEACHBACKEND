@@ -6,6 +6,7 @@ import {
   getAdminEntryLogs,
   getBeachReports,
   updateBeachReportStatus,
+  streamAdminReportEvents,
 } from '../controllers/adminController.js';
 import { getPendingVisitorEntries, getVisitorEntries, reviewVisitorEntry, streamPendingVisitorEntries } from '../controllers/visitorController.js';
 import { authMiddleware, eventAuthMiddleware } from '../middleware/authMiddleware.js';
@@ -14,6 +15,7 @@ import { requireAdmin } from '../middleware/roleMiddleware.js';
 const router = Router();
 
 router.get('/visitor-entries/events', eventAuthMiddleware, requireAdmin, streamPendingVisitorEntries);
+router.get('/beach-reports/events', eventAuthMiddleware, requireAdmin, streamAdminReportEvents);
 router.use(authMiddleware, requireAdmin);
 
 router.post('/scan-resident', scanResident);
@@ -27,3 +29,4 @@ router.get('/beach-reports', getBeachReports);
 router.patch('/beach-reports/:id', updateBeachReportStatus);
 
 export default router;
+

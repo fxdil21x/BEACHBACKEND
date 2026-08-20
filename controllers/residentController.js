@@ -160,3 +160,105 @@ export const importResidents = asyncHandler(async (req, res) => {
 
   return sendSuccess(res, { summary });
 });
+
+export const createResidentRecord = asyncHandler(async (req, res) => {
+  const {
+    name,
+    guardianName,
+    houseName,
+    ward,
+    age,
+    gender,
+    newSecIdNo,
+    district,
+    localBody,
+    pollingStation,
+  } = req.body;
+
+  if (!name || !name.trim()) {
+    return sendError(res, 'Name is required', 400);
+  }
+
+  const recordData = {
+    name: name.trim(),
+    guardianName: guardianName ? String(guardianName).trim() : undefined,
+    houseName: houseName ? String(houseName).trim() : undefined,
+    ward: ward ? String(ward).trim() : undefined,
+    age: age !== undefined && age !== '' && age !== null ? Number(age) : undefined,
+    gender: gender ? String(gender).trim() : undefined,
+    district: district ? String(district).trim() : undefined,
+    localBody: localBody ? String(localBody).trim() : undefined,
+    pollingStation: pollingStation ? String(pollingStation).trim() : undefined,
+  };
+
+  if (newSecIdNo && String(newSecIdNo).trim()) {
+    recordData.newSecIdNo = String(newSecIdNo).trim();
+  }
+
+  const record = await ResidentRecord.create(recordData);
+
+  return sendSuccess(res, { record }, 201);
+});
+
+export const updateResidentRecord = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  if (!isValidObjectId(id)) {
+    return sendError(res, 'Invalid resident ID', 400);
+  }
+
+  const record = await ResidentRecord.findById(id);
+  if (!record) {
+    return sendError(res, 'Resident record not found', 404);
+  }
+
+  const {
+    name,
+    guardianName,
+    houseName,
+    ward,
+    age,
+    gender,
+    newSecIdNo,
+    district,
+    localBody,
+    pollingStation,
+  } = req.body;
+
+  if (name !== undefined) {
+    if (!name || !String(name).trim()) {
+      return sendError(res, 'Name is required', 400);
+    }
+    record.name = String(name).trim();
+  }
+
+  if (guardianName !== undefined) record.guardianName = guardianName ? String(guardianName).trim() : undefined;
+  if (houseName !== undefined) record.houseName = houseName ? String(houseName).trim() : undefined;
+  if (ward !== undefined) record.ward = ward ? String(ward).trim() : undefined;
+  if (age !== undefined) record.age = age !== '' && age !== null ? Number(age) : undefined;
+  if (gender !== undefined) record.gender = gender ? String(gender).trim() : undefined;
+  if (district !== undefined) record.district = district ? String(district).trim() : undefined;
+  if (localBody !== undefined) record.localBody = localBody ? String(localBody).trim() : undefined;
+  if (pollingStation !== undefined) record.pollingStation = pollingStation ? String(pollingStation).trim() : undefined;
+  if (newSecIdNo !== undefined) record.newSecIdNo = newSecIdNo ? String(newSecIdNo).trim() : undefined;
+
+  await record.save();
+
+  return sendSuccess(res, { record });
+});
+
+export const deleteResidentRecord = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  if (!isValidObjectId(id)) {
+    return sendError(res, 'Invalid resident ID', 400);
+  }
+
+  const record = await ResidentRecord.findByIdAndDelete(id);
+  if (!record) {
+    return sendError(res, 'Resident record not found', 404);
+  }
+
+  return sendSuccess(res, { message: 'Resident record deleted successfully' });
+});
+

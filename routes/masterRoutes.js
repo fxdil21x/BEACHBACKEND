@@ -11,6 +11,9 @@ import {
 import {
   importResidents,
   getResidentRecordsMaster,
+  createResidentRecord,
+  updateResidentRecord,
+  deleteResidentRecord,
 } from '../controllers/residentController.js';
 import {
   getRegisteredResidents,
@@ -19,6 +22,12 @@ import {
 import { getEntryLogs } from '../controllers/adminController.js';
 import { getVisitorEntries } from '../controllers/visitorController.js';
 import { getReportsMaster } from '../controllers/reportController.js';
+import {
+  createAnnouncement,
+  getAnnouncementsMaster,
+  updateAnnouncement,
+  deleteAnnouncement,
+} from '../controllers/announcementController.js';
 import { authMiddleware } from '../middleware/authMiddleware.js';
 import { requireMasterAdmin } from '../middleware/roleMiddleware.js';
 import { uploadJson } from '../middleware/uploadMiddleware.js';
@@ -31,6 +40,18 @@ router.get('/dashboard', getDashboard);
 router.get('/analytics', getAnalyticsData);
 router.post('/import-residents', uploadJson.single('file'), importResidents);
 router.get('/resident-records', getResidentRecordsMaster);
+router.post('/resident-records', createResidentRecord);
+router.put('/resident-records/:id', updateResidentRecord);
+router.patch('/resident-records/:id', updateResidentRecord);
+router.post('/resident-records/:id', updateResidentRecord);
+router.delete('/resident-records/:id', deleteResidentRecord);
+
+// Direct root aliases when mounted at /api/resident-records or /api/master/resident-records
+router.get('/', getResidentRecordsMaster);
+router.post('/', createResidentRecord);
+router.put('/:id', updateResidentRecord);
+router.patch('/:id', updateResidentRecord);
+router.delete('/:id', deleteResidentRecord);
 router.get('/registered-residents', getRegisteredResidents);
 router.patch('/passes/:id', togglePassStatus);
 router.get('/visitor-entries', getVisitorEntries);
@@ -41,5 +62,10 @@ router.patch('/users/:id', updateUser);
 router.get('/admins', getAdmins);
 router.get('/audit-logs', getAuditLogs);
 router.get('/beach-reports', getReportsMaster);
+
+router.get('/announcements', getAnnouncementsMaster);
+router.post('/announcements', createAnnouncement);
+router.patch('/announcements/:id', updateAnnouncement);
+router.delete('/announcements/:id', deleteAnnouncement);
 
 export default router;

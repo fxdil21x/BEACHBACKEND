@@ -102,6 +102,8 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/beach', visitorRoutes);
 app.use('/api/visitor-entry', entryRouter);
 app.use('/api/master', masterRoutes);
+app.use('/api/master/resident-records', masterRoutes);
+app.use('/api/resident-records', masterRoutes);
 app.use('/api/beach-reports', reportRoutes);
 app.use('/api/public', publicRoutes);
 

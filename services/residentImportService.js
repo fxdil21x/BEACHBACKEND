@@ -20,7 +20,6 @@ export function parseImportPayload(data) {
 function validateRecord(record, index) {
   const errors = [];
   if (!record.name?.trim()) errors.push('name is required');
-  if (!record.newSecIdNo?.trim()) errors.push('newSecIdNo is required');
   if (record.age !== undefined && record.age !== null && Number.isNaN(Number(record.age))) {
     errors.push('age must be a number');
   }
@@ -44,7 +43,8 @@ function applyMetadata(record, metadata) {
 }
 
 function normalizeRecord(record) {
-  return {
+  const secId = String(record.newSecIdNo || record.new_sec_id_no || '').trim();
+  const normalized = {
     serialNo: record.serialNo ?? record.serial_no ?? null,
     name: String(record.name || '').trim(),
     guardianName: String(record.guardianName || record.guardian_name || '').trim(),
@@ -52,7 +52,6 @@ function normalizeRecord(record) {
     houseName: String(record.houseName || record.house_name || '').trim(),
     gender: String(record.gender || '').trim(),
     age: record.age != null ? Number(record.age) : null,
-    newSecIdNo: String(record.newSecIdNo || record.new_sec_id_no || '').trim(),
     ward: String(record.ward || '').trim(),
     district: String(record.district || '').trim(),
     localBody: String(record.localBody || record.local_body || '').trim(),
@@ -60,6 +59,10 @@ function normalizeRecord(record) {
     blockWard: String(record.blockWard || record.block_ward || '').trim(),
     districtWard: String(record.districtWard || record.district_ward || '').trim(),
   };
+  if (secId) {
+    normalized.newSecIdNo = secId;
+  }
+  return normalized;
 }
 
 async function insertBatch(batch, batchStartIndex) {
