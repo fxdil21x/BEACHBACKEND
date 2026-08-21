@@ -14,6 +14,10 @@ const featureSettingsSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    trackUserEnabled: {
+      type: Boolean,
+      default: false,
+    },
   },
   { timestamps: true }
 );
@@ -26,7 +30,11 @@ featureSettingsSchema.statics.getSettings = async function () {
       emergencySosEnabled: true,
       publicReportEnabled: true,
       userReportEnabled: true,
+      trackUserEnabled: false,
     });
+  } else if (settings.trackUserEnabled === undefined) {
+    settings.trackUserEnabled = false;
+    await settings.save();
   }
   return settings;
 };

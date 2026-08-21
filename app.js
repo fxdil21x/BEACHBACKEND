@@ -12,6 +12,7 @@ import masterRoutes from './routes/masterRoutes.js';
 import reportRoutes from './routes/reportRoutes.js';
 import publicRoutes from './routes/publicRoutes.js';
 import emergencyRoutes from './routes/emergencyRoutes.js';
+import locationRoutes from './routes/locationRoutes.js';
 import { errorMiddleware } from './middleware/errorMiddleware.js';
 import { generalApiRateLimit } from './middleware/rateLimitMiddleware.js';
 import { requireDBConnection } from './middleware/dbMiddleware.js';
@@ -72,7 +73,7 @@ console.log('Allowed Origins:', Array.from(allowedOrigins));
 console.log('CLIENT_URL env:', process.env.CLIENT_URL);
 
 const isLocalDevOrigin = (origin) =>
-  /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin);
+  /^https?:\/\/(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+|172\.(1[6-9]|2[0-9]|3[01])\.\d+\.\d+)(:\d+)?$/.test(origin);
 
 app.use(cors({
   origin(origin, callback) {
@@ -108,6 +109,7 @@ app.use('/api/resident-records', masterRoutes);
 app.use('/api/beach-reports', reportRoutes);
 app.use('/api/public', publicRoutes);
 app.use('/api/emergency', emergencyRoutes);
+app.use('/api/user/location', locationRoutes);
 
 app.use(errorMiddleware);
 

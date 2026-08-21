@@ -1,9 +1,14 @@
 import { Server } from 'socket.io';
+import FeatureSettings from '../models/FeatureSettings.js';
 
 let io = null;
 const activeEmergencies = new Map();
+const activeTrackedUsers = new Map(); // key: userId
 
 export function initSocket(server, allowedOrigins) {
+  activeTrackedUsers.clear();
+  activeEmergencies.clear();
+
   io = new Server(server, {
     path: '/api/socket.io',
     cors: {
@@ -28,11 +33,60 @@ export function initSocket(server, allowedOrigins) {
       // Send list of active pending emergencies to newly connected admin
       const pending = Array.from(activeEmergencies.values()).filter((e) => e.status === 'PENDING');
       socket.emit('emergency:active-list', pending);
+      // Also send list of active tracked users
+      socket.emit('location:initial-users', Array.from(activeTrackedUsers.values()));
+    });
+
+    socket.on('join:track-users', () => {
+      socket.join('admins');
+      socket.emit('location:initial-users', Array.from(activeTrackedUsers.values()));
     });
 
     socket.on('join:user', (userId) => {
       if (userId) {
         socket.join(`user:${userId}`);
+      }
+    });
+
+    // Handle user live location update
+    socket.on('user:location-update', async (data) => {
+      try {
+        const settings = await FeatureSettings.getSettings();
+        if (!settings.trackUserEnabled) {
+          socket.emit('tracking:disabled', { message: 'User tracking is disabled by Master Admin' });
+          if (data?.userId) activeTrackedUsers.delete(data.userId);
+          return;
+        }
+
+        const userId = data.userId || socket.id;
+        const userPayload = {
+          userId,
+          socketId: socket.id,
+          userName: data.userName || data.name || 'Registered User',
+          username: data.username || '',
+          userPhone: data.userPhone || data.phone || '',
+          latitude: Number(data.latitude),
+          longitude: Number(data.longitude),
+          speed: data.speed != null ? Number(data.speed) : null,
+          heading: data.heading != null ? Number(data.heading) : null,
+          accuracy: data.accuracy != null ? Number(data.accuracy) : null,
+          timestamp: new Date().toISOString(),
+          status: 'LIVE',
+        };
+
+        activeTrackedUsers.set(userId, userPayload);
+        io.to('admins').emit('location:user-update', userPayload);
+      } catch (err) {
+        console.error('[Socket] Location update error:', err);
+      }
+    });
+
+    // User stops tracking manually
+    socket.on('user:stop-tracking', (data) => {
+      const userId = data?.userId || socket.id;
+      if (activeTrackedUsers.has(userId)) {
+        activeTrackedUsers.delete(userId);
+        io.to('admins').emit('location:user-stopped', { userId, socketId: socket.id });
       }
     });
 
@@ -105,6 +159,14 @@ export function initSocket(server, allowedOrigins) {
 
     socket.on('disconnect', () => {
       console.log(`[Socket] Disconnected: ${socket.id}`);
+      // Find if this socket belonged to a tracked user
+      for (const [userId, user] of activeTrackedUsers.entries()) {
+        if (user.socketId === socket.id) {
+          activeTrackedUsers.delete(userId);
+          io.to('admins').emit('location:user-stopped', { userId, socketId: socket.id });
+          break;
+        }
+      }
     });
   });
 

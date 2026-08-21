@@ -1,7 +1,5 @@
 import mongoose from 'mongoose';
 
-mongoose.set('bufferCommands', false);
-
 let connectionPromise = null;
 
 export async function connectDB() {
