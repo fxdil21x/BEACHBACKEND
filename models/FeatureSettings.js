@@ -32,8 +32,9 @@ const featureSettingsSchema = new mongoose.Schema(
 
 // Ensure single settings document
 featureSettingsSchema.statics.getSettings = async function () {
-  let settings = await this.findOne();
-  if (!settings) {
+  const allSettings = await this.find().sort({ updatedAt: -1 });
+  let settings;
+  if (!allSettings || allSettings.length === 0) {
     settings = await this.create({
       emergencySosEnabled: true,
       publicReportEnabled: true,
@@ -43,6 +44,13 @@ featureSettingsSchema.statics.getSettings = async function () {
       resortBookingEnabled: true,
     });
   } else {
+    settings = allSettings[0];
+    // Remove any duplicate documents if present
+    if (allSettings.length > 1) {
+      const extraIds = allSettings.slice(1).map((s) => s._id);
+      await this.deleteMany({ _id: { $in: extraIds } });
+    }
+
     let updated = false;
     if (settings.trackUserEnabled === undefined) {
       settings.trackUserEnabled = false;
