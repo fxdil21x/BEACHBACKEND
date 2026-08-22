@@ -11,14 +11,18 @@ async function seed() {
   const password = process.env.MASTER_ADMIN_PASSWORD || 'MasterAdmin@123';
   const name = process.env.MASTER_ADMIN_NAME || 'Master Admin';
 
+  const passwordHash = await bcrypt.hash(password, 12);
   const existing = await User.findOne({ username: username.toLowerCase() });
   if (existing) {
-    console.log('Master admin already exists:', username);
+    existing.passwordHash = passwordHash;
+    existing.role = 'MASTER_ADMIN';
+    existing.isActive = true;
+    await existing.save();
+    console.log('Master admin password updated successfully:', username);
     await mongoose.disconnect();
     return;
   }
 
-  const passwordHash = await bcrypt.hash(password, 12);
   await User.create({
     name,
     username: username.toLowerCase(),

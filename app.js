@@ -91,6 +91,10 @@ app.use(express.json({ limit: '50mb' }));
 app.use(mongoSanitize());
 app.use(generalApiRateLimit);
 
+app.get('/', (_req, res) => {
+  res.json({ status: 'ok', message: 'Muzhappilangad Beach Safety API Server is running', health: '/api/health' });
+});
+
 app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', service: 'Muzhappilangad Beach API', db: getDBStatus() });
 });
