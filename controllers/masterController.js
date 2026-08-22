@@ -97,7 +97,7 @@ export const createUser = asyncHandler(async (req, res) => {
 
 export const updateUser = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  const { isActive, role, name } = req.body;
+  const { isActive, role, name, username, password } = req.body;
 
   if (!isValidObjectId(id)) {
     return sendError(res, 'Invalid user ID', 400);
@@ -109,14 +109,37 @@ export const updateUser = asyncHandler(async (req, res) => {
   }
 
   if (role && role !== user.role) {
+    const allowedRoles = ['USER', 'ADMIN'];
+    if (req.user.role === 'MASTER_ADMIN') allowedRoles.push('MASTER_ADMIN');
+    if (!allowedRoles.includes(role)) {
+      return sendError(res, 'Invalid role', 400);
+    }
     if (role === 'MASTER_ADMIN' && req.user.role !== 'MASTER_ADMIN') {
       return sendError(res, 'Cannot assign MASTER_ADMIN role', 403);
     }
     user.role = role;
   }
 
-  if (name) user.name = name.trim();
-  if (typeof isActive === 'boolean') {
+  if (name && name.trim()) {
+    user.name = name.trim();
+  }
+
+  if (username && username.trim().toLowerCase() !== user.username) {
+    const existing = await User.findOne({
+      username: username.trim().toLowerCase(),
+      _id: { $ne: id },
+    });
+    if (existing) {
+      return sendError(res, 'Username already taken', 409);
+    }
+    user.username = username.trim().toLowerCase();
+  }
+
+  if (password && password.trim()) {
+    user.passwordHash = await bcrypt.hash(password.trim(), 12);
+  }
+
+  if (typeof isActive === 'boolean' && isActive !== user.isActive) {
     user.isActive = isActive;
     await logAudit({
       performedBy: req.user._id,
@@ -128,6 +151,14 @@ export const updateUser = asyncHandler(async (req, res) => {
   }
 
   await user.save();
+
+  await logAudit({
+    performedBy: req.user._id,
+    role: req.user.role,
+    action: 'USER_UPDATED',
+    targetType: 'User',
+    targetId: user._id,
+  });
 
   return sendSuccess(res, { user: user.toSafeJSON() });
 });

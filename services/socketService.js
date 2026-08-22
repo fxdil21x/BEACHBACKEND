@@ -90,11 +90,21 @@ export function initSocket(server, allowedOrigins) {
       }
     });
 
+    // Join emergency room
+    socket.on('join:emergency', (emergencyId) => {
+      if (emergencyId) {
+        socket.join(`emergency:${emergencyId}`);
+      }
+    });
+
     // Trigger emergency from socket
     socket.on('emergency:trigger', (data) => {
       const emergencyId = data.emergencyId || `emg_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+      socket.join(`emergency:${emergencyId}`);
+
       const emergencyData = {
         emergencyId,
+        socketId: socket.id,
         userId: data.userId || 'ANONYMOUS',
         userName: data.userName || 'Visitor / Resident',
         userPhone: data.userPhone || '',
@@ -105,7 +115,7 @@ export function initSocket(server, allowedOrigins) {
       };
 
       activeEmergencies.set(emergencyId, emergencyData);
-      console.log(`[Socket] Emergency triggered: ${emergencyId}`);
+      console.log(`[Socket] Emergency triggered: ${emergencyId} (socket: ${socket.id})`);
 
       // Broadcast emergency:new to ALL active admins
       io.to('admins').emit('emergency:new', emergencyData);
@@ -134,8 +144,15 @@ export function initSocket(server, allowedOrigins) {
         timestamp: new Date().toISOString(),
       });
 
-      // Notify user if needed
-      if (emergency?.userId) {
+      // Notify user on all channels
+      if (emergencyId) {
+        io.to(`emergency:${emergencyId}`).emit('emergency:status-update', {
+          emergencyId,
+          status: 'CLAIMED',
+          claimedBy: adminName,
+        });
+      }
+      if (emergency?.userId && emergency.userId !== 'ANONYMOUS') {
         io.to(`user:${emergency.userId}`).emit('emergency:status-update', {
           emergencyId,
           status: 'CLAIMED',
@@ -154,6 +171,7 @@ export function initSocket(server, allowedOrigins) {
           resolved: true,
           timestamp: new Date().toISOString(),
         });
+        io.to(`emergency:${emergencyId}`).emit('emergency:cancelled', { emergencyId });
       }
     });
 
@@ -163,15 +181,25 @@ export function initSocket(server, allowedOrigins) {
     // payload: { emergencyId, userId, sdp, adminId, adminName }
     socket.on('call:offer', (data) => {
       const { userId, emergencyId, sdp, adminId, adminName } = data;
-      console.log(`[Socket] call:offer from admin ${adminId} → user ${userId} (emergency: ${emergencyId})`);
-      if (userId) {
-        io.to(`user:${userId}`).emit('call:incoming', {
-          emergencyId,
-          adminId,
-          adminName: adminName || 'Admin',
-          sdp,
-          adminSocketId: socket.id,
-        });
+      console.log(`[Socket] call:offer from admin ${adminId} → emergency: ${emergencyId} (user: ${userId})`);
+      const payload = {
+        emergencyId,
+        adminId,
+        adminName: adminName || 'Gate Admin',
+        sdp,
+        adminSocketId: socket.id,
+      };
+
+      // Broadcast offer to the emergency room, user room, and the creator's direct socket
+      if (emergencyId) {
+        socket.to(`emergency:${emergencyId}`).emit('call:incoming', payload);
+      }
+      if (userId && userId !== 'ANONYMOUS') {
+        socket.to(`user:${userId}`).emit('call:incoming', payload);
+      }
+      const emg = activeEmergencies.get(emergencyId);
+      if (emg?.socketId && emg.socketId !== socket.id) {
+        io.to(emg.socketId).emit('call:incoming', payload);
       }
     });
 
@@ -179,18 +207,24 @@ export function initSocket(server, allowedOrigins) {
     // payload: { emergencyId, sdp, adminSocketId }
     socket.on('call:answer', (data) => {
       const { adminSocketId, emergencyId, sdp } = data;
-      console.log(`[Socket] call:answer from user → admin socket ${adminSocketId}`);
+      console.log(`[Socket] call:answer from user socket ${socket.id} → admin socket ${adminSocketId}`);
       if (adminSocketId) {
-        io.to(adminSocketId).emit('call:answered', { emergencyId, sdp });
+        io.to(adminSocketId).emit('call:answered', {
+          emergencyId,
+          sdp,
+          userSocketId: socket.id,
+        });
       }
     });
 
-    // ICE candidate exchange — relay to specific target socket
-    // payload: { targetSocketId, candidate }
+    // ICE candidate exchange — relay to specific target socket or emergency room
+    // payload: { targetSocketId, emergencyId, candidate }
     socket.on('call:ice-candidate', (data) => {
-      const { targetSocketId, candidate } = data;
+      const { targetSocketId, emergencyId, candidate } = data;
       if (targetSocketId) {
         io.to(targetSocketId).emit('call:ice-candidate', { candidate, fromSocketId: socket.id });
+      } else if (emergencyId) {
+        socket.to(`emergency:${emergencyId}`).emit('call:ice-candidate', { candidate, fromSocketId: socket.id });
       }
     });
 
@@ -201,6 +235,9 @@ export function initSocket(server, allowedOrigins) {
       console.log(`[Socket] call:end for emergency ${emergencyId}`);
       if (targetSocketId) {
         io.to(targetSocketId).emit('call:ended', { emergencyId });
+      }
+      if (emergencyId) {
+        socket.to(`emergency:${emergencyId}`).emit('call:ended', { emergencyId });
       }
     });
 

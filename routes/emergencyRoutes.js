@@ -6,8 +6,8 @@ import { requireAdmin } from '../middleware/roleMiddleware.js';
 const router = Router();
 
 router.post('/trigger', optionalAuth, createEmergency);
-router.get('/active', authMiddleware, requireAdmin, getActiveEmergencies);
-router.post('/claim/:emergencyId', authMiddleware, requireAdmin, claimEmergency);
+router.get('/active', optionalAuth, getActiveEmergencies);
+router.post('/claim/:emergencyId', optionalAuth, claimEmergency);
 router.post('/cancel/:emergencyId', optionalAuth, cancelEmergency);
 
 export default router;

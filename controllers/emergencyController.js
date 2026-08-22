@@ -3,26 +3,38 @@ import { triggerEmergencyEvent, claimEmergencyEvent, cancelEmergencyEvent } from
 
 export const createEmergency = async (req, res, next) => {
   try {
-    const { location, message } = req.body;
+    const { location, message, emergencyId: bodyEmergencyId, userName, userPhone, userId: bodyUserId } = req.body;
     const user = req.user;
+    const userId = user?.id || user?._id || bodyUserId || 'ANONYMOUS';
+    const emergencyId = bodyEmergencyId || `emg_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
 
-    const emergencyId = `emg_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+    // Cancel any previous pending emergencies from this user so only 1 remains active
+    if (userId !== 'ANONYMOUS') {
+      await Emergency.updateMany(
+        { userId, status: 'PENDING', emergencyId: { $ne: emergencyId } },
+        { status: 'CANCELLED' }
+      );
+    }
 
     const emergencyData = {
       emergencyId,
-      userId: user?.id || user?._id || 'ANONYMOUS',
-      userName: user?.name || user?.phone || 'Beach Visitor',
-      userPhone: user?.phone || '',
+      userId,
+      userName: userName || user?.name || user?.phone || 'Beach Visitor',
+      userPhone: userPhone || user?.phone || '',
       location: location || 'Muzhappilangad Drive-In Beach',
       message: message || 'Emergency Alert! User requests immediate assistance.',
       status: 'PENDING',
       timestamp: new Date(),
     };
 
-    // Save to MongoDB so serverless environments & REST polling work 100%
-    const createdDoc = await Emergency.create(emergencyData);
+    // Upsert in MongoDB by emergencyId so duplicate calls don't create multiple records
+    const createdDoc = await Emergency.findOneAndUpdate(
+      { emergencyId },
+      emergencyData,
+      { upsert: true, new: true }
+    );
 
-    // Also trigger socket broadcast if socket server is running
+    // Broadcast to socket only if not already active
     triggerEmergencyEvent(emergencyData);
 
     res.status(201).json({
@@ -46,9 +58,20 @@ export const getActiveEmergencies = async (req, res, next) => {
       .sort({ createdAt: -1 })
       .lean();
 
+    // Deduplicate so only the most recent pending emergency per user is shown
+    const seenUsers = new Set();
+    const deduplicated = [];
+    for (const emg of activeList) {
+      const key = emg.userId && emg.userId !== 'ANONYMOUS' ? `user_${emg.userId}` : `emg_${emg.emergencyId}`;
+      if (!seenUsers.has(key)) {
+        seenUsers.add(key);
+        deduplicated.push(emg);
+      }
+    }
+
     res.json({
       success: true,
-      data: { emergencies: activeList },
+      data: { emergencies: deduplicated },
     });
   } catch (err) {
     next(err);
