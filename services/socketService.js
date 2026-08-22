@@ -157,6 +157,55 @@ export function initSocket(server, allowedOrigins) {
       }
     });
 
+    // ─── WebRTC Signaling Relay ───────────────────────────────────────────────
+
+    // Admin → User: send SDP offer to start call
+    // payload: { emergencyId, userId, sdp, adminId, adminName }
+    socket.on('call:offer', (data) => {
+      const { userId, emergencyId, sdp, adminId, adminName } = data;
+      console.log(`[Socket] call:offer from admin ${adminId} → user ${userId} (emergency: ${emergencyId})`);
+      if (userId) {
+        io.to(`user:${userId}`).emit('call:incoming', {
+          emergencyId,
+          adminId,
+          adminName: adminName || 'Admin',
+          sdp,
+          adminSocketId: socket.id,
+        });
+      }
+    });
+
+    // User → Admin: send SDP answer back
+    // payload: { emergencyId, sdp, adminSocketId }
+    socket.on('call:answer', (data) => {
+      const { adminSocketId, emergencyId, sdp } = data;
+      console.log(`[Socket] call:answer from user → admin socket ${adminSocketId}`);
+      if (adminSocketId) {
+        io.to(adminSocketId).emit('call:answered', { emergencyId, sdp });
+      }
+    });
+
+    // ICE candidate exchange — relay to specific target socket
+    // payload: { targetSocketId, candidate }
+    socket.on('call:ice-candidate', (data) => {
+      const { targetSocketId, candidate } = data;
+      if (targetSocketId) {
+        io.to(targetSocketId).emit('call:ice-candidate', { candidate, fromSocketId: socket.id });
+      }
+    });
+
+    // Either party ends the call
+    // payload: { targetSocketId, emergencyId }
+    socket.on('call:end', (data) => {
+      const { targetSocketId, emergencyId } = data;
+      console.log(`[Socket] call:end for emergency ${emergencyId}`);
+      if (targetSocketId) {
+        io.to(targetSocketId).emit('call:ended', { emergencyId });
+      }
+    });
+
+    // ─────────────────────────────────────────────────────────────────────────
+
     socket.on('disconnect', () => {
       console.log(`[Socket] Disconnected: ${socket.id}`);
       // Find if this socket belonged to a tracked user
