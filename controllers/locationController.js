@@ -1,6 +1,6 @@
 import FeatureSettings from '../models/FeatureSettings.js';
 import { asyncHandler, sendSuccess, sendError } from '../utils/index.js';
-import { saveActiveTrackedUser } from '../services/socketService.js';
+import { saveActiveTrackedUser, removeActiveTrackedUser, getActiveTrackedUsers } from '../services/socketService.js';
 
 export const updateLocation = asyncHandler(async (req, res) => {
   const settings = await FeatureSettings.getSettings();
@@ -35,4 +35,17 @@ export const updateLocation = asyncHandler(async (req, res) => {
   }
 
   return sendSuccess(res, { tracking: userPayload });
+});
+
+export const stopLocation = asyncHandler(async (req, res) => {
+  const userId = req.user?.id || req.user?._id || req.body?.userId;
+  if (userId) {
+    removeActiveTrackedUser(userId);
+  }
+  return sendSuccess(res, { message: 'Location tracking stopped' });
+});
+
+export const getActiveLocations = asyncHandler(async (req, res) => {
+  const activeUsers = getActiveTrackedUsers();
+  return sendSuccess(res, { users: activeUsers });
 });

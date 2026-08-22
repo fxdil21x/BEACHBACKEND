@@ -1,4 +1,7 @@
+import dns from 'dns';
 import mongoose from 'mongoose';
+
+dns.setDefaultResultOrder('ipv4first');
 
 let connectionPromise = null;
 

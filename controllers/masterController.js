@@ -132,8 +132,36 @@ export const updateUser = asyncHandler(async (req, res) => {
   return sendSuccess(res, { user: user.toSafeJSON() });
 });
 
+export const deleteUser = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  if (!isValidObjectId(id)) {
+    return sendError(res, 'Invalid user ID', 400);
+  }
+
+  const user = await User.findById(id);
+  if (!user) {
+    return sendError(res, 'User not found', 404);
+  }
+
+  if (String(user._id) === String(req.user._id)) {
+    return sendError(res, 'Cannot delete your active logged-in account', 400);
+  }
+
+  await User.findByIdAndDelete(id);
+
+  await logAudit({
+    performedBy: req.user._id,
+    role: req.user.role,
+    action: 'USER_DELETED',
+    targetType: 'User',
+    targetId: id,
+  });
+
+  return sendSuccess(res, { message: 'User account deleted successfully' });
+});
+
 export const getAdmins = asyncHandler(async (req, res) => {
-  const admins = await User.find({ role: 'ADMIN' }).sort({ createdAt: -1 }).lean();
+  const admins = await User.find({ role: { $in: ['ADMIN', 'MASTER_ADMIN'] } }).sort({ createdAt: -1 }).lean();
 
   const enriched = await Promise.all(
     admins.map(async (admin) => {
@@ -142,6 +170,7 @@ export const getAdmins = asyncHandler(async (req, res) => {
         id: admin._id,
         name: admin.name,
         username: admin.username,
+        role: admin.role,
         isActive: admin.isActive,
         createdAt: admin.createdAt,
         lastLoginAt: admin.lastLoginAt,

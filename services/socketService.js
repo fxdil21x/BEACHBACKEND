@@ -170,6 +170,20 @@ export function initSocket(server, allowedOrigins) {
     });
   });
 
+  // Background interval to clean up stale user location streams (older than 30 seconds)
+  setInterval(() => {
+    const now = Date.now();
+    for (const [userId, user] of activeTrackedUsers.entries()) {
+      const userTime = new Date(user.timestamp).getTime();
+      if (isNaN(userTime) || now - userTime > 30000) {
+        activeTrackedUsers.delete(userId);
+        if (io) {
+          io.to('admins').emit('location:user-stopped', { userId });
+        }
+      }
+    }
+  }, 10000);
+
   return io;
 }
 
@@ -222,9 +236,37 @@ export function cancelEmergencyEvent(emergencyId) {
 
 export function saveActiveTrackedUser(userPayload) {
   if (userPayload && userPayload.userId) {
-    activeTrackedUsers.set(userPayload.userId, userPayload);
+    activeTrackedUsers.set(String(userPayload.userId), userPayload);
     if (io) {
       io.to('admins').emit('location:user-update', userPayload);
     }
   }
+}
+
+export function removeActiveTrackedUser(userId) {
+  if (!userId) return;
+  const idStr = String(userId);
+  if (activeTrackedUsers.has(idStr)) {
+    activeTrackedUsers.delete(idStr);
+    if (io) {
+      io.to('admins').emit('location:user-stopped', { userId: idStr });
+    }
+  }
+}
+
+export function getActiveTrackedUsers() {
+  const now = Date.now();
+  const validUsers = [];
+  for (const [userId, user] of activeTrackedUsers.entries()) {
+    const userTime = new Date(user.timestamp).getTime();
+    if (!isNaN(userTime) && now - userTime <= 30000) {
+      validUsers.push(user);
+    } else {
+      activeTrackedUsers.delete(userId);
+      if (io) {
+        io.to('admins').emit('location:user-stopped', { userId });
+      }
+    }
+  }
+  return validUsers;
 }

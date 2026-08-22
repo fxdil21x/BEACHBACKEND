@@ -5,6 +5,7 @@ import {
   getUsers,
   createUser,
   updateUser,
+  deleteUser,
   getAdmins,
   getAuditLogs,
 } from '../controllers/masterController.js';
@@ -65,6 +66,7 @@ router.get('/entry-logs', getEntryLogs);
 router.get('/users', getUsers);
 router.post('/users', createUser);
 router.patch('/users/:id', updateUser);
+router.delete('/users/:id', deleteUser);
 router.get('/admins', getAdmins);
 router.get('/audit-logs', getAuditLogs);
 router.get('/beach-reports', getReportsMaster);
