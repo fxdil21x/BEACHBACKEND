@@ -18,6 +18,14 @@ const featureSettingsSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    orderFoodEnabled: {
+      type: Boolean,
+      default: true,
+    },
+    resortBookingEnabled: {
+      type: Boolean,
+      default: true,
+    },
   },
   { timestamps: true }
 );
@@ -31,10 +39,26 @@ featureSettingsSchema.statics.getSettings = async function () {
       publicReportEnabled: true,
       userReportEnabled: true,
       trackUserEnabled: false,
+      orderFoodEnabled: true,
+      resortBookingEnabled: true,
     });
-  } else if (settings.trackUserEnabled === undefined) {
-    settings.trackUserEnabled = false;
-    await settings.save();
+  } else {
+    let updated = false;
+    if (settings.trackUserEnabled === undefined) {
+      settings.trackUserEnabled = false;
+      updated = true;
+    }
+    if (settings.orderFoodEnabled === undefined) {
+      settings.orderFoodEnabled = true;
+      updated = true;
+    }
+    if (settings.resortBookingEnabled === undefined) {
+      settings.resortBookingEnabled = true;
+      updated = true;
+    }
+    if (updated) {
+      await settings.save();
+    }
   }
   return settings;
 };

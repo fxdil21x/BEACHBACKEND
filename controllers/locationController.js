@@ -1,6 +1,6 @@
 import FeatureSettings from '../models/FeatureSettings.js';
 import { asyncHandler, sendSuccess, sendError } from '../utils/index.js';
-import { getIO } from '../services/socketService.js';
+import { saveActiveTrackedUser } from '../services/socketService.js';
 
 export const updateLocation = asyncHandler(async (req, res) => {
   const settings = await FeatureSettings.getSettings();
@@ -29,10 +29,9 @@ export const updateLocation = asyncHandler(async (req, res) => {
   };
 
   try {
-    const io = getIO();
-    io.to('admins').emit('location:user-update', userPayload);
+    saveActiveTrackedUser(userPayload);
   } catch {
-    // Ignore socket unavailable error
+    // Ignore error
   }
 
   return sendSuccess(res, { tracking: userPayload });

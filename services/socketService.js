@@ -219,3 +219,12 @@ export function cancelEmergencyEvent(emergencyId) {
     timestamp: new Date().toISOString(),
   });
 }
+
+export function saveActiveTrackedUser(userPayload) {
+  if (userPayload && userPayload.userId) {
+    activeTrackedUsers.set(userPayload.userId, userPayload);
+    if (io) {
+      io.to('admins').emit('location:user-update', userPayload);
+    }
+  }
+}
