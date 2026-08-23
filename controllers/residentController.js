@@ -259,6 +259,93 @@ export const deleteResidentRecord = asyncHandler(async (req, res) => {
     return sendError(res, 'Resident record not found', 404);
   }
 
+  await ResidentPass.deleteMany({ residentRecordId: id });
+
+  const { logAudit } = await import('../services/auditService.js');
+  await logAudit({
+    performedBy: req.user?._id,
+    role: req.user?.role,
+    action: 'DELETE_RESIDENT_RECORD',
+    targetType: 'ResidentRecord',
+    targetId: id,
+    metadata: { name: record.name, ward: record.ward },
+  });
+
   return sendSuccess(res, { message: 'Resident record deleted successfully' });
+});
+
+export const bulkDeleteResidentRecords = asyncHandler(async (req, res) => {
+  const { ids } = req.body;
+
+  if (!Array.isArray(ids) || ids.length === 0) {
+    return sendError(res, 'Please provide an array of resident IDs to delete', 400);
+  }
+
+  const validIds = ids.filter((id) => isValidObjectId(id));
+  if (validIds.length === 0) {
+    return sendError(res, 'No valid resident IDs provided', 400);
+  }
+
+  const deleteResult = await ResidentRecord.deleteMany({ _id: { $in: validIds } });
+  await ResidentPass.deleteMany({ residentRecordId: { $in: validIds } });
+
+  const { logAudit } = await import('../services/auditService.js');
+  await logAudit({
+    performedBy: req.user?._id,
+    role: req.user?.role,
+    action: 'BULK_DELETE_RESIDENT_RECORDS',
+    targetType: 'ResidentRecord',
+    metadata: { count: deleteResult.deletedCount, requestedCount: ids.length },
+  });
+
+  return sendSuccess(res, {
+    message: `Successfully deleted ${deleteResult.deletedCount} resident record(s)`,
+    deletedCount: deleteResult.deletedCount,
+  });
+});
+
+export const purgeAllResidentData = asyncHandler(async (req, res) => {
+  const [deletedRecords, deletedPasses, deletedLogs, deletedUsers] = await Promise.all([
+    ResidentRecord.deleteMany({}),
+    ResidentPass.deleteMany({}),
+    (async () => {
+      try {
+        const ResidentEntryLog = (await import('../models/ResidentEntryLog.js')).default;
+        return await ResidentEntryLog.deleteMany({});
+      } catch {
+        return { deletedCount: 0 };
+      }
+    })(),
+    (async () => {
+      try {
+        const User = (await import('../models/User.js')).default;
+        // Strictly delete ONLY role: 'USER', NEVER ADMIN or MASTER_ADMIN
+        return await User.deleteMany({ role: 'USER' });
+      } catch {
+        return { deletedCount: 0 };
+      }
+    })(),
+  ]);
+
+  const summary = {
+    residentRecords: deletedRecords.deletedCount,
+    residentPasses: deletedPasses.deletedCount,
+    residentEntryLogs: deletedLogs.deletedCount,
+    residentUsers: deletedUsers.deletedCount,
+  };
+
+  const { logAudit } = await import('../services/auditService.js');
+  await logAudit({
+    performedBy: req.user?._id,
+    role: req.user?.role,
+    action: 'PURGE_ALL_RESIDENT_DATA',
+    targetType: 'ResidentRecord',
+    metadata: summary,
+  });
+
+  return sendSuccess(res, {
+    message: 'All resident records and registered resident data have been successfully deleted',
+    summary,
+  });
 });
 

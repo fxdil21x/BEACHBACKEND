@@ -15,6 +15,8 @@ import {
   createResidentRecord,
   updateResidentRecord,
   deleteResidentRecord,
+  bulkDeleteResidentRecords,
+  purgeAllResidentData,
 } from '../controllers/residentController.js';
 import {
   getRegisteredResidents,
@@ -46,6 +48,14 @@ router.get('/analytics', getAnalyticsData);
 router.get('/features', getFeatureSettings);
 router.put('/features', updateFeatureSettings);
 router.post('/import-residents', uploadJson.single('file'), importResidents);
+
+// Resident records bulk and purge operations
+router.post('/resident-records/purge-all', purgeAllResidentData);
+router.delete('/resident-records/purge-all', purgeAllResidentData);
+router.post('/resident-records/bulk-delete', bulkDeleteResidentRecords);
+router.delete('/resident-records/bulk', bulkDeleteResidentRecords);
+router.delete('/resident-records/bulk-delete', bulkDeleteResidentRecords);
+
 router.get('/resident-records', getResidentRecordsMaster);
 router.post('/resident-records', createResidentRecord);
 router.put('/resident-records/:id', updateResidentRecord);
@@ -54,6 +64,11 @@ router.post('/resident-records/:id', updateResidentRecord);
 router.delete('/resident-records/:id', deleteResidentRecord);
 
 // Direct root aliases when mounted at /api/resident-records or /api/master/resident-records
+router.post('/purge-all', purgeAllResidentData);
+router.delete('/purge-all', purgeAllResidentData);
+router.post('/bulk-delete', bulkDeleteResidentRecords);
+router.delete('/bulk-delete', bulkDeleteResidentRecords);
+router.delete('/bulk', bulkDeleteResidentRecords);
 router.get('/', getResidentRecordsMaster);
 router.post('/', createResidentRecord);
 router.put('/:id', updateResidentRecord);
