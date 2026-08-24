@@ -13,6 +13,7 @@ import reportRoutes from './routes/reportRoutes.js';
 import publicRoutes from './routes/publicRoutes.js';
 import emergencyRoutes from './routes/emergencyRoutes.js';
 import locationRoutes from './routes/locationRoutes.js';
+import serviceRoutes from './routes/serviceRoutes.js';
 import { errorMiddleware } from './middleware/errorMiddleware.js';
 import { generalApiRateLimit } from './middleware/rateLimitMiddleware.js';
 import { requireDBConnection } from './middleware/dbMiddleware.js';
@@ -117,6 +118,7 @@ app.use('/api/beach-reports', reportRoutes);
 app.use('/api/public', publicRoutes);
 app.use('/api/emergency', emergencyRoutes);
 app.use('/api/user/location', locationRoutes);
+app.use('/api/services', serviceRoutes);
 
 app.use(errorMiddleware);
 

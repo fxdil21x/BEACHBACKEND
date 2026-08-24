@@ -26,6 +26,55 @@ const featureSettingsSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    tabMaintenance: {
+      type: [
+        {
+          tabId: { type: String, required: true },
+          title: { type: String, default: 'Feature Under Maintenance' },
+          description: { type: String, default: 'This section is temporarily unavailable for scheduled updates.' },
+          icon: { type: String, default: 'Wrench' },
+          isBlocked: { type: Boolean, default: false },
+          updatedAt: { type: Date, default: Date.now },
+        },
+      ],
+      default: [
+        {
+          tabId: 'report',
+          title: 'Issue Reporting Under Maintenance',
+          description: 'Reporting is temporarily paused for routine system maintenance.',
+          icon: 'Wrench',
+          isBlocked: false,
+        },
+        {
+          tabId: 'services',
+          title: 'Services Directory Under Update',
+          description: 'The services and rides directory is undergoing scheduled updates.',
+          icon: 'Car',
+          isBlocked: false,
+        },
+        {
+          tabId: 'my-pass',
+          title: 'Gate Pass System Under Maintenance',
+          description: 'Pass verification systems are being upgraded.',
+          icon: 'Lock',
+          isBlocked: false,
+        },
+        {
+          tabId: 'my-visits',
+          title: 'Visit Log Updating',
+          description: 'Access log synchronization is in progress.',
+          icon: 'Clock',
+          isBlocked: false,
+        },
+        {
+          tabId: 'beach-rules',
+          title: 'Safety Guidelines Updating',
+          description: 'Safety guidelines are being revised.',
+          icon: 'ShieldAlert',
+          isBlocked: false,
+        },
+      ],
+    },
   },
   { timestamps: true }
 );
@@ -62,6 +111,46 @@ featureSettingsSchema.statics.getSettings = async function () {
     }
     if (settings.resortBookingEnabled === undefined) {
       settings.resortBookingEnabled = true;
+      updated = true;
+    }
+    if (!settings.tabMaintenance || settings.tabMaintenance.length === 0) {
+      settings.tabMaintenance = [
+        {
+          tabId: 'report',
+          title: 'Issue Reporting Under Maintenance',
+          description: 'Reporting is temporarily paused for routine system maintenance.',
+          icon: 'Wrench',
+          isBlocked: false,
+        },
+        {
+          tabId: 'services',
+          title: 'Services Directory Under Update',
+          description: 'The services and rides directory is undergoing scheduled updates.',
+          icon: 'Car',
+          isBlocked: false,
+        },
+        {
+          tabId: 'my-pass',
+          title: 'Gate Pass System Under Maintenance',
+          description: 'Pass verification systems are being upgraded.',
+          icon: 'Lock',
+          isBlocked: false,
+        },
+        {
+          tabId: 'my-visits',
+          title: 'Visit Log Updating',
+          description: 'Access log synchronization is in progress.',
+          icon: 'Clock',
+          isBlocked: false,
+        },
+        {
+          tabId: 'beach-rules',
+          title: 'Safety Guidelines Updating',
+          description: 'Safety guidelines are being revised.',
+          icon: 'ShieldAlert',
+          isBlocked: false,
+        },
+      ];
       updated = true;
     }
     if (updated) {

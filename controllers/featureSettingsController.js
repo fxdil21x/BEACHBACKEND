@@ -12,6 +12,7 @@ export const getFeatureSettings = asyncHandler(async (_req, res) => {
       trackUserEnabled: Boolean(settings.trackUserEnabled),
       orderFoodEnabled: Boolean(settings.orderFoodEnabled ?? true),
       resortBookingEnabled: Boolean(settings.resortBookingEnabled ?? true),
+      tabMaintenance: settings.tabMaintenance || [],
     },
   });
 });
@@ -24,6 +25,7 @@ export const updateFeatureSettings = asyncHandler(async (req, res) => {
     trackUserEnabled,
     orderFoodEnabled,
     resortBookingEnabled,
+    tabMaintenance,
   } = req.body;
   const settings = await FeatureSettings.getSettings();
 
@@ -45,6 +47,9 @@ export const updateFeatureSettings = asyncHandler(async (req, res) => {
   if (typeof resortBookingEnabled === 'boolean') {
     settings.resortBookingEnabled = resortBookingEnabled;
   }
+  if (Array.isArray(tabMaintenance)) {
+    settings.tabMaintenance = tabMaintenance;
+  }
 
   await settings.save();
 
@@ -55,6 +60,7 @@ export const updateFeatureSettings = asyncHandler(async (req, res) => {
     trackUserEnabled: Boolean(settings.trackUserEnabled),
     orderFoodEnabled: Boolean(settings.orderFoodEnabled),
     resortBookingEnabled: Boolean(settings.resortBookingEnabled),
+    tabMaintenance: settings.tabMaintenance || [],
   };
 
   try {
