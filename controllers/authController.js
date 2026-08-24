@@ -1,6 +1,6 @@
 import bcrypt from 'bcrypt';
 import User from '../models/User.js';
-import { generateJwt } from '../utils/generateJwt.js';
+import { generateTokens, verifyRefreshToken } from '../utils/generateJwt.js';
 import { asyncHandler, sendSuccess, sendError } from '../utils/index.js';
 import { logAudit } from '../services/auditService.js';
 
@@ -28,7 +28,7 @@ export const register = asyncHandler(async (req, res) => {
     role: 'USER',
   });
 
-  const token = generateJwt(user._id, user.role);
+  const { token, accessToken, refreshToken: newRefreshToken } = generateTokens(user._id, user.role);
 
   await logAudit({
     performedBy: user._id,
@@ -38,7 +38,16 @@ export const register = asyncHandler(async (req, res) => {
     targetId: user._id,
   });
 
-  return sendSuccess(res, { token, user: user.toSafeJSON() }, 201);
+  return sendSuccess(
+    res,
+    {
+      token,
+      accessToken,
+      refreshToken: newRefreshToken,
+      user: user.toSafeJSON(),
+    },
+    201
+  );
 });
 
 export const login = asyncHandler(async (req, res) => {
@@ -65,7 +74,7 @@ export const login = asyncHandler(async (req, res) => {
   user.lastLoginAt = new Date();
   await user.save();
 
-  const token = generateJwt(user._id, user.role);
+  const { token, accessToken, refreshToken: newRefreshToken } = generateTokens(user._id, user.role);
 
   const clientIp = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.socket?.remoteAddress || req.ip || '';
   const userAgent = req.headers['user-agent'] || '';
@@ -84,7 +93,38 @@ export const login = asyncHandler(async (req, res) => {
     },
   });
 
-  return sendSuccess(res, { token, user: user.toSafeJSON() });
+  return sendSuccess(res, {
+    token,
+    accessToken,
+    refreshToken: newRefreshToken,
+    user: user.toSafeJSON(),
+  });
+});
+
+export const refreshToken = asyncHandler(async (req, res) => {
+  const incomingRefreshToken = req.body.refreshToken || req.headers['x-refresh-token'];
+  if (!incomingRefreshToken) {
+    return sendError(res, 'Refresh token is required', 400);
+  }
+
+  try {
+    const decoded = verifyRefreshToken(incomingRefreshToken);
+    const user = await User.findById(decoded.userId);
+    if (!user || !user.isActive) {
+      return sendError(res, 'User account not found or disabled', 401);
+    }
+
+    const { token, accessToken, refreshToken: newRefreshToken } = generateTokens(user._id, user.role);
+
+    return sendSuccess(res, {
+      token,
+      accessToken,
+      refreshToken: newRefreshToken,
+      user: user.toSafeJSON(),
+    });
+  } catch (err) {
+    return sendError(res, 'Invalid or expired refresh token. Please log in again.', 401);
+  }
 });
 
 export const logout = asyncHandler(async (req, res) => {

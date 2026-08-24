@@ -11,7 +11,7 @@ import {
   sanitizeUserSearch,
   validatePhone,
 } from '../utils/validators.js';
-import { generateJwt } from '../utils/generateJwt.js';
+import { generateTokens } from '../utils/generateJwt.js';
 import { generateQrToken } from '../utils/generateQrToken.js';
 import { processAndUploadPhoto } from '../services/imageService.js';
 import { logAudit } from '../services/auditService.js';
@@ -148,12 +148,14 @@ export const publicRegisterResident = asyncHandler(async (req, res) => {
     'name guardianName houseName ward age gender'
   );
 
-  const token = generateJwt(user._id, user.role);
+  const { token, accessToken, refreshToken } = generateTokens(user._id, user.role);
 
   return sendSuccess(
     res,
     {
       token,
+      accessToken,
+      refreshToken,
       user: (updatedUser || user).toSafeJSON(),
       pass: formatPass(populated),
       qrToken: pass.qrToken,
@@ -223,10 +225,12 @@ export const publicLoginResident = asyncHandler(async (req, res) => {
     targetId: user._id,
   });
 
-  const token = generateJwt(user._id, user.role);
+  const { token, accessToken, refreshToken } = generateTokens(user._id, user.role);
 
   return sendSuccess(res, {
     token,
+    accessToken,
+    refreshToken,
     user: user.toSafeJSON(),
     pass: formatPass(pass),
     qrToken: pass.qrToken,
