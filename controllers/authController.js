@@ -67,15 +67,43 @@ export const login = asyncHandler(async (req, res) => {
 
   const token = generateJwt(user._id, user.role);
 
+  const clientIp = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.socket?.remoteAddress || req.ip || '';
+  const userAgent = req.headers['user-agent'] || '';
+
   await logAudit({
     performedBy: user._id,
     role: user.role,
     action: 'LOGIN',
     targetType: 'User',
     targetId: user._id,
+    metadata: {
+      ip: clientIp,
+      userAgent,
+      name: user.name,
+      username: user.username,
+    },
   });
 
   return sendSuccess(res, { token, user: user.toSafeJSON() });
+});
+
+export const logout = asyncHandler(async (req, res) => {
+  if (req.user) {
+    const clientIp = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.socket?.remoteAddress || req.ip || '';
+    await logAudit({
+      performedBy: req.user._id,
+      role: req.user.role,
+      action: 'LOGOUT',
+      targetType: 'User',
+      targetId: req.user._id,
+      metadata: {
+        ip: clientIp,
+        name: req.user.name,
+        username: req.user.username,
+      },
+    });
+  }
+  return sendSuccess(res, { message: 'Logged out successfully' });
 });
 
 export const me = asyncHandler(async (req, res) => {

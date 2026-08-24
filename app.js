@@ -20,6 +20,9 @@ import { getDBStatus } from './config/db.js';
 
 const app = express();
 
+// Trust proxy for reverse proxies (Render, Cloudflare, Heroku, Nginx) so client IP is accurately identified
+app.set('trust proxy', 1);
+
 app.use(
   helmet({
     crossOriginResourcePolicy: { policy: 'cross-origin' },

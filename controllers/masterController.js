@@ -214,9 +214,42 @@ export const getAdmins = asyncHandler(async (req, res) => {
 });
 
 export const getAuditLogs = asyncHandler(async (req, res) => {
-  const { action, page = 1, limit = 30 } = req.query;
-  const filter = {};
-  if (action) filter.action = action;
+  const { action, role, search, page = 1, limit = 30 } = req.query;
+  const filter = {
+    role: { $in: ['USER', 'ADMIN'] },
+  };
+
+  if (action && action !== 'ALL') {
+    filter.action = action;
+  }
+  if (role && role !== 'ALL' && ['USER', 'ADMIN'].includes(role)) {
+    filter.role = role;
+  }
+
+  if (search && search.trim()) {
+    const searchRegex = new RegExp(search.trim(), 'i');
+    const matchedUsers = await User.find({
+      $or: [{ name: searchRegex }, { username: searchRegex }, { phone: searchRegex }],
+    }).select('_id');
+    const userIds = matchedUsers.map((u) => u._id);
+
+    filter.$and = [
+      { role: { $in: ['USER', 'ADMIN'] } },
+      {
+        $or: [
+          { performedBy: { $in: userIds } },
+          { action: searchRegex },
+          { 'metadata.name': searchRegex },
+          { 'metadata.username': searchRegex },
+          { 'metadata.ip': searchRegex },
+          { 'metadata.device': searchRegex },
+          { 'metadata.os': searchRegex },
+          { 'metadata.browser': searchRegex },
+        ],
+      },
+    ];
+    delete filter.$or;
+  }
 
   const skip = (Math.max(1, Number(page)) - 1) * Number(limit);
 
@@ -225,7 +258,7 @@ export const getAuditLogs = asyncHandler(async (req, res) => {
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(Number(limit))
-      .populate('performedBy', 'name username role')
+      .populate('performedBy', 'name username role phone')
       .lean(),
     AuditLog.countDocuments(filter),
   ]);
