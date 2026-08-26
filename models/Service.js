@@ -139,6 +139,15 @@ const serviceSchema = new mongoose.Schema(
         type: Boolean,
         default: false,
       },
+      dietaryType: {
+        type: String,
+        enum: ['all', 'veg', 'non-veg', 'seafood', 'fried'],
+        default: 'all',
+      },
+      foodTypes: {
+        type: [String],
+        default: ['all'],
+      },
       menuItems: [menuItemSchema],
     },
 

@@ -74,8 +74,8 @@ async function saveLocally(buffer, folder, publicIdPrefix) {
 export async function processAndUploadPhoto(buffer, folder = 'resident-photos') {
   const processed = await sharp(buffer)
     .rotate()
-    .resize(600, 800, { fit: 'inside', withoutEnlargement: true })
-    .webp({ quality: 80 })
+    .resize(400, 400, { fit: 'inside', withoutEnlargement: true })
+    .webp({ quality: 70, effort: 5 })
     .toBuffer();
 
   if (isCloudinaryConfigured()) {

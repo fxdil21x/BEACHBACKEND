@@ -3,18 +3,22 @@ import multer from 'multer';
 const storage = multer.memoryStorage();
 
 const fileFilter = (_req, file, cb) => {
-  const allowed = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
-  if (allowed.includes(file.mimetype)) {
+  if (file.mimetype && file.mimetype.startsWith('image/')) {
     cb(null, true);
   } else {
-    cb(new Error('Only JPG, JPEG, PNG, and WebP images are allowed'), false);
+    const ext = file.originalname?.toLowerCase() || '';
+    if (/\.(jpe?g|png|webp|gif|bmp|avif|heic|heif|tiff?|svg)$/i.test(ext)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only image files are allowed'), false);
+    }
   }
 };
 
 export const uploadPhoto = multer({
   storage,
   fileFilter,
-  limits: { fileSize: 15 * 1024 * 1024 },
+  limits: { fileSize: 25 * 1024 * 1024 },
 });
 
 export const uploadJson = multer({

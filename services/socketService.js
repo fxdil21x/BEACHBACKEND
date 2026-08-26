@@ -90,6 +90,16 @@ export function initSocket(server, allowedOrigins) {
       }
     });
 
+    // Handle user clicking to call a service / auto / taxi
+    socket.on('service:call-click', (data) => {
+      console.log(`[Socket] User initiated phone call: ${data?.phone} (${data?.serviceName || data?.driverName || 'Service'})`);
+      io.to('admins').emit('service:call-activity', {
+        ...data,
+        socketId: socket.id,
+        timestamp: data?.timestamp || new Date().toISOString(),
+      });
+    });
+
     // Join emergency room
     socket.on('join:emergency', (emergencyId) => {
       if (emergencyId) {
@@ -256,12 +266,12 @@ export function initSocket(server, allowedOrigins) {
     });
   });
 
-  // Background interval to clean up stale user location streams (older than 30 seconds)
+  // Background interval to clean up stale user location streams (older than 60 seconds)
   setInterval(() => {
     const now = Date.now();
     for (const [userId, user] of activeTrackedUsers.entries()) {
       const userTime = new Date(user.timestamp).getTime();
-      if (isNaN(userTime) || now - userTime > 30000) {
+      if (isNaN(userTime) || now - userTime > 60000) {
         activeTrackedUsers.delete(userId);
         if (io) {
           io.to('admins').emit('location:user-stopped', { userId });
