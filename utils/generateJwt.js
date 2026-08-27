@@ -3,8 +3,9 @@ import jwt from 'jsonwebtoken';
 export function generateJwt(userId, role) {
   const secret = process.env.JWT_SECRET;
   if (!secret) throw new Error('JWT_SECRET is not defined');
+  const expiresIn = (role === 'ADMIN' || role === 'MASTER_ADMIN') ? '15h' : (process.env.JWT_EXPIRES_IN || '15h');
   return jwt.sign({ userId, role }, secret, {
-    expiresIn: process.env.JWT_EXPIRES_IN || '2h',
+    expiresIn,
   });
 }
 
