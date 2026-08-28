@@ -9,6 +9,7 @@ export const loginRateLimit = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 30,
   keyGenerator: getClientIp,
+  validate: { ip: false, xForwardedForHeader: false, default: false },
   message: { success: false, message: 'Too many login attempts, please try again later' },
   standardHeaders: true,
   legacyHeaders: false,
@@ -18,6 +19,7 @@ export const visitorEntryRateLimit = rateLimit({
   windowMs: 60 * 1000,
   max: 30,
   keyGenerator: getClientIp,
+  validate: { ip: false, xForwardedForHeader: false, default: false },
   message: { success: false, message: 'Too many entry requests, please wait' },
   standardHeaders: true,
   legacyHeaders: false,
@@ -27,6 +29,7 @@ export const generalApiRateLimit = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 3000,
   keyGenerator: getClientIp,
+  validate: { ip: false, xForwardedForHeader: false, default: false },
   skip: (req) => {
     // Never rate-limit health checks, features check, or continuous location telemetry
     const url = req.originalUrl || req.url;

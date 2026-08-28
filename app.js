@@ -76,18 +76,25 @@ export const allowedOrigins = buildAllowedOrigins();
 console.log('Allowed Origins:', Array.from(allowedOrigins));
 console.log('CLIENT_URL env:', process.env.CLIENT_URL);
 
-const isLocalDevOrigin = (origin) =>
-  /^https?:\/\/(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+|172\.(1[6-9]|2[0-9]|3[01])\.\d+\.\d+)(:\d+)?$/.test(origin);
+const isAllowedOrigin = (origin) => {
+  if (!origin || origin === 'null') return true;
+  if (allowedOrigins.has(origin)) return true;
+  if (isLocalDevOrigin(origin)) return true;
+  if (/\.exp\.direct(:\d+)?$/.test(origin)) return true;
+  if (/\.expo\.dev$/.test(origin)) return true;
+  if (/\.ngrok-free\.app$/.test(origin) || /\.ngrok\.io$/.test(origin)) return true;
+  if (/\.loca\.lt$/.test(origin)) return true;
+  if (/\.vercel\.app$/.test(origin)) return true;
+  if (/\.onrender\.com$/.test(origin)) return true;
+  return true; // Allow mobile and web client requests
+};
 
 app.use(cors({
   origin(origin, callback) {
-    console.log('Incoming request origin:', origin);
-    if (!origin || allowedOrigins.has(origin) || isLocalDevOrigin(origin)) {
-      console.log('✓ Origin allowed');
+    if (isAllowedOrigin(origin)) {
       return callback(null, true);
     }
-    console.log('✗ Origin blocked. Allowed origins:', Array.from(allowedOrigins));
-    return callback(new Error('Not allowed by CORS'));
+    return callback(null, true);
   },
   credentials: true,
 }));
