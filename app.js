@@ -21,6 +21,18 @@ import { getDBStatus } from './config/db.js';
 
 const app = express();
 
+// Disable ETag generation so server always responds with fresh 200 OK instead of 304 Not Modified
+app.set('etag', false);
+
+// Disable client caching for dynamic API responses
+app.use((_req, res, next) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+  res.setHeader('Surrogate-Control', 'no-store');
+  next();
+});
+
 // Trust proxy for reverse proxies (Render, Cloudflare, Heroku, Nginx) so client IP is accurately identified
 app.set('trust proxy', 1);
 
