@@ -87,6 +87,44 @@ const featureSettingsSchema = new mongoose.Schema(
       dockStyle: { type: String, default: 'floating' },
       headerStyle: { type: String, default: 'glass' },
       glowMode: { type: String, default: 'vibrant' },
+      components: {
+        type: [
+          {
+            id: { type: String, required: true },
+            name: { type: String, required: true },
+            type: { type: String, default: 'layout' },
+            style: { type: String, default: 'floating' },
+            options: [{ type: String }],
+            active: { type: Boolean, default: true },
+          },
+        ],
+        default: [
+          {
+            id: 'nav',
+            name: 'Bottom Menu Bar',
+            type: 'navigation',
+            style: 'floating',
+            options: ['floating', 'flush'],
+            active: true,
+          },
+          {
+            id: 'header',
+            name: 'Top Header Bar',
+            type: 'header',
+            style: 'glass',
+            options: ['glass', 'minimal', 'solid'],
+            active: true,
+          },
+          {
+            id: 'cards',
+            name: 'Card & Surface Containers',
+            type: 'surface',
+            style: 'rounded-2xl',
+            options: ['rounded-xl', 'rounded-2xl', 'rounded-3xl'],
+            active: true,
+          },
+        ],
+      },
     },
   },
   { timestamps: true }
@@ -116,6 +154,32 @@ featureSettingsSchema.statics.getSettings = async function () {
         dockStyle: 'floating',
         headerStyle: 'glass',
         glowMode: 'vibrant',
+        components: [
+          {
+            id: 'nav',
+            name: 'Bottom Menu Bar',
+            type: 'navigation',
+            style: 'floating',
+            options: ['floating', 'flush'],
+            active: true,
+          },
+          {
+            id: 'header',
+            name: 'Top Header Bar',
+            type: 'header',
+            style: 'glass',
+            options: ['glass', 'minimal', 'solid'],
+            active: true,
+          },
+          {
+            id: 'cards',
+            name: 'Card & Surface Containers',
+            type: 'surface',
+            style: 'rounded-2xl',
+            options: ['rounded-xl', 'rounded-2xl', 'rounded-3xl'],
+            active: true,
+          },
+        ],
       },
     });
   } else {
@@ -152,7 +216,62 @@ featureSettingsSchema.statics.getSettings = async function () {
         dockStyle: 'floating',
         headerStyle: 'glass',
         glowMode: 'vibrant',
+        components: [
+          {
+            id: 'nav',
+            name: 'Bottom Menu Bar',
+            type: 'navigation',
+            style: 'floating',
+            options: ['floating', 'flush'],
+            active: true,
+          },
+          {
+            id: 'header',
+            name: 'Top Header Bar',
+            type: 'header',
+            style: 'glass',
+            options: ['glass', 'minimal', 'solid'],
+            active: true,
+          },
+          {
+            id: 'cards',
+            name: 'Card & Surface Containers',
+            type: 'surface',
+            style: 'rounded-2xl',
+            options: ['rounded-xl', 'rounded-2xl', 'rounded-3xl'],
+            active: true,
+          },
+        ],
       };
+      updated = true;
+    } else if (!settings.appearance.components || settings.appearance.components.length === 0) {
+      settings.appearance.components = [
+        {
+          id: 'nav',
+          name: 'Bottom Menu Bar',
+          type: 'navigation',
+          style: settings.appearance.dockStyle || 'floating',
+          options: ['floating', 'flush'],
+          active: true,
+        },
+        {
+          id: 'header',
+          name: 'Top Header Bar',
+          type: 'header',
+          style: settings.appearance.headerStyle || 'glass',
+          options: ['glass', 'minimal', 'solid'],
+          active: true,
+        },
+        {
+          id: 'cards',
+          name: 'Card & Surface Containers',
+          type: 'surface',
+          style: settings.appearance.cardRadius || 'rounded-2xl',
+          options: ['rounded-xl', 'rounded-2xl', 'rounded-3xl'],
+          active: true,
+        },
+      ];
+      settings.markModified('appearance');
       updated = true;
     }
     if (!settings.tabMaintenance || settings.tabMaintenance.length === 0) {
