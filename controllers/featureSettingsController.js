@@ -58,6 +58,28 @@ export function formatAppearance(appearance) {
   };
 }
 
+export function formatNavs(navs) {
+  const defaultUserNav = [
+    { id: 'home', to: '/user/home', labelKey: 'nav.home', icon: 'Home', active: true, order: 1 },
+    { id: 'visits', to: '/user/my-visits', labelKey: 'nav.myVisits', icon: 'ClipboardList', active: true, order: 2 },
+    { id: 'services', to: '/user/services', labelKey: 'nav.services', icon: 'LayoutGrid', active: true, order: 3 },
+    { id: 'report', to: '/user/report', labelKey: 'nav.myReports', icon: 'TriangleAlert', active: true, order: 4 },
+    { id: 'profile', to: '/user/profile', labelKey: 'nav.profile', icon: 'UserRound', active: true, order: 5 },
+  ];
+  const defaultAdminNav = [
+    { id: 'scan', to: '/admin/scan', labelKey: 'nav.scan', icon: 'ScanLine', active: true, order: 1 },
+    { id: 'search', to: '/admin/search', labelKey: 'nav.search', icon: 'Search', active: true, order: 2 },
+    { id: 'recent', to: '/admin/recent', labelKey: 'nav.recent', icon: 'Clock3', active: true, order: 3 },
+    { id: 'reports', to: '/admin/reports', labelKey: 'nav.reports', icon: 'TriangleAlert', active: true, order: 4 },
+    { id: 'profile', to: '/admin/profile', labelKey: 'nav.profile', icon: 'UserRound', active: true, order: 5 },
+  ];
+
+  const user = Array.isArray(navs?.user) && navs.user.length > 0 ? navs.user : defaultUserNav;
+  const admin = Array.isArray(navs?.admin) && navs.admin.length > 0 ? navs.admin : defaultAdminNav;
+
+  return { user, admin };
+}
+
 export const getFeatureSettings = asyncHandler(async (_req, res) => {
   const settings = await FeatureSettings.getSettings();
   const formattedAppearance = formatAppearance(settings.appearance);
@@ -71,6 +93,7 @@ export const getFeatureSettings = asyncHandler(async (_req, res) => {
       orderFoodEnabled: Boolean(settings.orderFoodEnabled ?? true),
       resortBookingEnabled: Boolean(settings.resortBookingEnabled ?? true),
       tabMaintenance: settings.tabMaintenance || [],
+      navs: formatNavs(settings.navs),
       appearance: formattedAppearance,
     },
   });
@@ -85,6 +108,7 @@ export const updateFeatureSettings = asyncHandler(async (req, res) => {
     orderFoodEnabled,
     resortBookingEnabled,
     tabMaintenance,
+    navs,
     appearance,
   } = req.body;
   const settings = await FeatureSettings.getSettings();
@@ -109,6 +133,13 @@ export const updateFeatureSettings = asyncHandler(async (req, res) => {
   }
   if (Array.isArray(tabMaintenance)) {
     settings.tabMaintenance = tabMaintenance;
+  }
+  if (navs && typeof navs === 'object') {
+    settings.navs = {
+      user: Array.isArray(navs.user) ? navs.user : settings.navs?.user || [],
+      admin: Array.isArray(navs.admin) ? navs.admin : settings.navs?.admin || [],
+    };
+    settings.markModified('navs');
   }
   if (appearance && typeof appearance === 'object') {
     const prev = settings.appearance ? settings.appearance.toObject?.() || settings.appearance : {};

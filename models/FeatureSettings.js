@@ -26,6 +26,46 @@ const featureSettingsSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    navs: {
+      user: {
+        type: [
+          {
+            id: { type: String },
+            to: { type: String, required: true },
+            labelKey: { type: String, required: true },
+            icon: { type: String, default: 'Home' },
+            active: { type: Boolean, default: true },
+            order: { type: Number, default: 0 },
+          },
+        ],
+        default: [
+          { id: 'home', to: '/user/home', labelKey: 'nav.home', icon: 'Home', active: true, order: 1 },
+          { id: 'visits', to: '/user/my-visits', labelKey: 'nav.myVisits', icon: 'ClipboardList', active: true, order: 2 },
+          { id: 'services', to: '/user/services', labelKey: 'nav.services', icon: 'LayoutGrid', active: true, order: 3 },
+          { id: 'report', to: '/user/report', labelKey: 'nav.myReports', icon: 'TriangleAlert', active: true, order: 4 },
+          { id: 'profile', to: '/user/profile', labelKey: 'nav.profile', icon: 'UserRound', active: true, order: 5 },
+        ],
+      },
+      admin: {
+        type: [
+          {
+            id: { type: String },
+            to: { type: String, required: true },
+            labelKey: { type: String, required: true },
+            icon: { type: String, default: 'ScanLine' },
+            active: { type: Boolean, default: true },
+            order: { type: Number, default: 0 },
+          },
+        ],
+        default: [
+          { id: 'scan', to: '/admin/scan', labelKey: 'nav.scan', icon: 'ScanLine', active: true, order: 1 },
+          { id: 'search', to: '/admin/search', labelKey: 'nav.search', icon: 'Search', active: true, order: 2 },
+          { id: 'recent', to: '/admin/recent', labelKey: 'nav.recent', icon: 'Clock3', active: true, order: 3 },
+          { id: 'reports', to: '/admin/reports', labelKey: 'nav.reports', icon: 'TriangleAlert', active: true, order: 4 },
+          { id: 'profile', to: '/admin/profile', labelKey: 'nav.profile', icon: 'UserRound', active: true, order: 5 },
+        ],
+      },
+    },
     tabMaintenance: {
       type: [
         {
@@ -318,6 +358,26 @@ featureSettingsSchema.statics.getSettings = async function () {
           isBlocked: false,
         },
       ];
+      updated = true;
+    }
+    if (!settings.navs || !settings.navs.user || settings.navs.user.length === 0) {
+      settings.navs = {
+        user: [
+          { id: 'home', to: '/user/home', labelKey: 'nav.home', icon: 'Home', active: true, order: 1 },
+          { id: 'visits', to: '/user/my-visits', labelKey: 'nav.myVisits', icon: 'ClipboardList', active: true, order: 2 },
+          { id: 'services', to: '/user/services', labelKey: 'nav.services', icon: 'LayoutGrid', active: true, order: 3 },
+          { id: 'report', to: '/user/report', labelKey: 'nav.myReports', icon: 'TriangleAlert', active: true, order: 4 },
+          { id: 'profile', to: '/user/profile', labelKey: 'nav.profile', icon: 'UserRound', active: true, order: 5 },
+        ],
+        admin: [
+          { id: 'scan', to: '/admin/scan', labelKey: 'nav.scan', icon: 'ScanLine', active: true, order: 1 },
+          { id: 'search', to: '/admin/search', labelKey: 'nav.search', icon: 'Search', active: true, order: 2 },
+          { id: 'recent', to: '/admin/recent', labelKey: 'nav.recent', icon: 'Clock3', active: true, order: 3 },
+          { id: 'reports', to: '/admin/reports', labelKey: 'nav.reports', icon: 'TriangleAlert', active: true, order: 4 },
+          { id: 'profile', to: '/admin/profile', labelKey: 'nav.profile', icon: 'UserRound', active: true, order: 5 },
+        ],
+      };
+      settings.markModified('navs');
       updated = true;
     }
     if (updated) {
