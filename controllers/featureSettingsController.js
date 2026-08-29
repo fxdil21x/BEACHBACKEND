@@ -6,38 +6,92 @@ export function formatAppearance(appearance) {
     ? appearance.toObject()
     : { ...(appearance || {}) };
 
-  const components = Array.isArray(appObj.components) && appObj.components.length > 0
-    ? appObj.components
-    : [
-        {
-          id: 'nav',
-          name: 'Bottom Menu Bar',
-          type: 'navigation',
-          style: appObj.dockStyle || 'floating',
-          options: ['floating', 'flush'],
-          active: true,
-        },
-        {
-          id: 'header',
-          name: 'Top Header Bar',
-          type: 'header',
-          style: appObj.headerStyle || 'glass',
-          options: ['glass', 'minimal', 'solid'],
-          active: true,
-        },
-        {
-          id: 'cards',
-          name: 'Card & Surface Containers',
-          type: 'surface',
-          style: appObj.cardRadius || 'rounded-2xl',
-          options: ['rounded-xl', 'rounded-2xl', 'rounded-3xl'],
-          active: true,
-        },
-      ];
+  const defaultComponents = [
+    {
+      id: 'nav',
+      name: 'User Bottom Navigation',
+      type: 'user',
+      componentType: 'navigation',
+      target: 'user',
+      style: appObj.userDockStyle || appObj.dockStyle || 'floating',
+      options: ['floating', 'flush'],
+      active: true,
+    },
+    {
+      id: 'header',
+      name: 'User Top Header Bar',
+      type: 'user',
+      componentType: 'header',
+      target: 'user',
+      style: appObj.headerStyle || 'glass',
+      options: ['glass', 'minimal', 'solid'],
+      active: true,
+    },
+    {
+      id: 'cards',
+      name: 'User Card & Surface Containers',
+      type: 'user',
+      componentType: 'surface',
+      target: 'user',
+      style: appObj.cardRadius || 'rounded-2xl',
+      options: ['rounded-xl', 'rounded-2xl', 'rounded-3xl'],
+      active: true,
+    },
+    {
+      id: 'admin-nav',
+      name: 'Admin Bottom Navigation',
+      type: 'admin',
+      componentType: 'navigation',
+      target: 'admin',
+      style: appObj.adminDockStyle || 'flush',
+      options: ['floating', 'flush'],
+      active: true,
+    },
+    {
+      id: 'admin-header',
+      name: 'Admin Top Header Bar',
+      type: 'admin',
+      componentType: 'header',
+      target: 'admin',
+      style: appObj.headerStyle || 'glass',
+      options: ['glass', 'minimal', 'solid'],
+      active: true,
+    },
+    {
+      id: 'admin-cards',
+      name: 'Admin Card & Surface Containers',
+      type: 'admin',
+      componentType: 'surface',
+      target: 'admin',
+      style: appObj.cardRadius || 'rounded-2xl',
+      options: ['rounded-xl', 'rounded-2xl', 'rounded-3xl'],
+      active: true,
+    },
+  ];
 
-  const navComp = components.find((c) => c.id === 'nav');
-  const cardsComp = components.find((c) => c.id === 'cards');
-  const headerComp = components.find((c) => c.id === 'header');
+  let rawComponents = Array.isArray(appObj.components) && appObj.components.length > 0
+    ? appObj.components
+    : defaultComponents;
+
+  const components = rawComponents.map((c) => {
+    const isUser = c.id === 'nav' || c.id === 'header' || c.id === 'cards' || c.id?.startsWith('user-') || c.type === 'user' || c.target === 'user';
+    const isAdmin = c.id?.startsWith('admin-') || c.type === 'admin' || c.target === 'admin';
+    return {
+      id: c.id,
+      name: c.name,
+      type: isAdmin ? 'admin' : (isUser ? 'user' : (c.type || 'user')),
+      componentType: c.componentType || (c.id?.includes('nav') ? 'navigation' : c.id?.includes('header') ? 'header' : 'surface'),
+      target: isAdmin ? 'admin' : 'user',
+      style: c.style,
+      options: c.options || (c.id?.includes('nav') ? ['floating', 'flush'] : c.id?.includes('header') ? ['glass', 'minimal', 'solid'] : ['rounded-xl', 'rounded-2xl', 'rounded-3xl']),
+      active: c.active !== false,
+    };
+  });
+
+  const userNavComp = components.find((c) => c.id === 'nav' || c.id === 'user-nav');
+  const adminNavComp = components.find((c) => c.id === 'admin-nav');
+  const cardsComp = components.find((c) => c.id === 'cards' || c.id === 'user-cards');
+  const headerComp = components.find((c) => c.id === 'header' || c.id === 'user-header');
 
   return {
     themeMode: appObj.themeMode || 'light',
@@ -49,9 +103,9 @@ export function formatAppearance(appearance) {
     glowColor: appObj.glowColor || 'rgba(2, 132, 199, 0.35)',
     glowMode: appObj.glowMode || 'vibrant',
     components,
-    dockStyle: appObj.dockStyle || navComp?.style || 'floating',
-    userDockStyle: appObj.userDockStyle || appObj.dockStyle || navComp?.style || 'floating',
-    adminDockStyle: appObj.adminDockStyle || 'flush',
+    dockStyle: appObj.userDockStyle || appObj.dockStyle || userNavComp?.style || 'floating',
+    userDockStyle: appObj.userDockStyle || appObj.dockStyle || userNavComp?.style || 'floating',
+    adminDockStyle: appObj.adminDockStyle || adminNavComp?.style || 'flush',
     cardRadius: appObj.cardRadius || cardsComp?.style || 'rounded-2xl',
     headerStyle: appObj.headerStyle || headerComp?.style || 'glass',
     banners: appObj.banners || {},
