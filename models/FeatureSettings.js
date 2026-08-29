@@ -125,6 +125,10 @@ const featureSettingsSchema = new mongoose.Schema(
           },
         ],
       },
+      banners: {
+        type: mongoose.Schema.Types.Mixed,
+        default: {},
+      },
     },
   },
   { timestamps: true }

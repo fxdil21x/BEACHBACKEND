@@ -52,6 +52,7 @@ export function formatAppearance(appearance) {
     dockStyle: appObj.dockStyle || navComp?.style || 'floating',
     cardRadius: appObj.cardRadius || cardsComp?.style || 'rounded-2xl',
     headerStyle: appObj.headerStyle || headerComp?.style || 'glass',
+    banners: appObj.banners || {},
   };
 }
 
