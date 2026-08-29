@@ -75,6 +75,19 @@ const featureSettingsSchema = new mongoose.Schema(
         },
       ],
     },
+    appearance: {
+      themeMode: { type: String, enum: ['light', 'dark'], default: 'light' },
+      presetId: { type: String, default: 'ocean-blue' },
+      accentColor: { type: String, default: '#0284C7' },
+      accentSecondary: { type: String, default: '#38BDF8' },
+      bgColor: { type: String, default: '#F8FAFC' },
+      cardBgColor: { type: String, default: '#FFFFFF' },
+      glowColor: { type: String, default: 'rgba(2, 132, 199, 0.35)' },
+      cardRadius: { type: String, default: 'rounded-2xl' },
+      dockStyle: { type: String, default: 'floating' },
+      headerStyle: { type: String, default: 'glass' },
+      glowMode: { type: String, default: 'vibrant' },
+    },
   },
   { timestamps: true }
 );
@@ -91,6 +104,19 @@ featureSettingsSchema.statics.getSettings = async function () {
       trackUserEnabled: false,
       orderFoodEnabled: true,
       resortBookingEnabled: true,
+      appearance: {
+        themeMode: 'light',
+        presetId: 'ocean-blue',
+        accentColor: '#0284C7',
+        accentSecondary: '#38BDF8',
+        bgColor: '#F8FAFC',
+        cardBgColor: '#FFFFFF',
+        glowColor: 'rgba(2, 132, 199, 0.35)',
+        cardRadius: 'rounded-2xl',
+        dockStyle: 'floating',
+        headerStyle: 'glass',
+        glowMode: 'vibrant',
+      },
     });
   } else {
     settings = allSettings[0];
@@ -111,6 +137,22 @@ featureSettingsSchema.statics.getSettings = async function () {
     }
     if (settings.resortBookingEnabled === undefined) {
       settings.resortBookingEnabled = true;
+      updated = true;
+    }
+    if (!settings.appearance) {
+      settings.appearance = {
+        themeMode: 'light',
+        presetId: 'ocean-blue',
+        accentColor: '#0284C7',
+        accentSecondary: '#38BDF8',
+        bgColor: '#F8FAFC',
+        cardBgColor: '#FFFFFF',
+        glowColor: 'rgba(2, 132, 199, 0.35)',
+        cardRadius: 'rounded-2xl',
+        dockStyle: 'floating',
+        headerStyle: 'glass',
+        glowMode: 'vibrant',
+      };
       updated = true;
     }
     if (!settings.tabMaintenance || settings.tabMaintenance.length === 0) {

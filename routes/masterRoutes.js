@@ -34,6 +34,8 @@ import {
 import {
   getFeatureSettings,
   updateFeatureSettings,
+  getAppearance,
+  updateAppearance,
 } from '../controllers/featureSettingsController.js';
 import { authMiddleware } from '../middleware/authMiddleware.js';
 import { requireMasterAdmin } from '../middleware/roleMiddleware.js';
@@ -47,6 +49,9 @@ router.get('/dashboard', getDashboard);
 router.get('/analytics', getAnalyticsData);
 router.get('/features', getFeatureSettings);
 router.put('/features', updateFeatureSettings);
+router.get('/appearance', getAppearance);
+router.put('/appearance', updateAppearance);
+router.patch('/appearance', updateAppearance);
 router.post('/import-residents', uploadJson.single('file'), importResidents);
 
 // Resident records bulk and purge operations

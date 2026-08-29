@@ -31,11 +31,16 @@ export const register = asyncHandler(async (req, res) => {
   const { token, accessToken, refreshToken: newRefreshToken } = generateTokens(user._id, user.role);
 
   await logAudit({
+    req,
     performedBy: user._id,
     role: user.role,
     action: 'USER_REGISTERED',
-    targetType: '',
+    targetType: 'User',
     targetId: user._id,
+    metadata: {
+      name: user.name,
+      username: user.username,
+    },
   });
 
   return sendSuccess(
@@ -76,18 +81,14 @@ export const login = asyncHandler(async (req, res) => {
 
   const { token, accessToken, refreshToken: newRefreshToken } = generateTokens(user._id, user.role);
 
-  const clientIp = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.socket?.remoteAddress || req.ip || '';
-  const userAgent = req.headers['user-agent'] || '';
-
   await logAudit({
+    req,
     performedBy: user._id,
     role: user.role,
     action: 'LOGIN',
     targetType: 'User',
     targetId: user._id,
     metadata: {
-      ip: clientIp,
-      userAgent,
       name: user.name,
       username: user.username,
     },
@@ -129,15 +130,14 @@ export const refreshToken = asyncHandler(async (req, res) => {
 
 export const logout = asyncHandler(async (req, res) => {
   if (req.user) {
-    const clientIp = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.socket?.remoteAddress || req.ip || '';
     await logAudit({
+      req,
       performedBy: req.user._id,
       role: req.user.role,
       action: 'LOGOUT',
       targetType: 'User',
       targetId: req.user._id,
       metadata: {
-        ip: clientIp,
         name: req.user.name,
         username: req.user.username,
       },

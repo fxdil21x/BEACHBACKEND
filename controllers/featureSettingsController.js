@@ -13,6 +13,7 @@ export const getFeatureSettings = asyncHandler(async (_req, res) => {
       orderFoodEnabled: Boolean(settings.orderFoodEnabled ?? true),
       resortBookingEnabled: Boolean(settings.resortBookingEnabled ?? true),
       tabMaintenance: settings.tabMaintenance || [],
+      appearance: settings.appearance,
     },
   });
 });
@@ -26,6 +27,7 @@ export const updateFeatureSettings = asyncHandler(async (req, res) => {
     orderFoodEnabled,
     resortBookingEnabled,
     tabMaintenance,
+    appearance,
   } = req.body;
   const settings = await FeatureSettings.getSettings();
 
@@ -50,6 +52,13 @@ export const updateFeatureSettings = asyncHandler(async (req, res) => {
   if (Array.isArray(tabMaintenance)) {
     settings.tabMaintenance = tabMaintenance;
   }
+  if (appearance && typeof appearance === 'object') {
+    settings.appearance = {
+      ...(settings.appearance ? settings.appearance.toObject?.() || settings.appearance : {}),
+      ...appearance,
+    };
+    settings.markModified('appearance');
+  }
 
   await settings.save();
 
@@ -61,16 +70,52 @@ export const updateFeatureSettings = asyncHandler(async (req, res) => {
     orderFoodEnabled: Boolean(settings.orderFoodEnabled),
     resortBookingEnabled: Boolean(settings.resortBookingEnabled),
     tabMaintenance: settings.tabMaintenance || [],
+    appearance: settings.appearance,
   };
 
   try {
     const io = getIO();
     io.emit('features:updated', { settings: settingsPayload });
+    io.emit('appearance:updated', { appearance: settings.appearance });
   } catch {
     // Socket might not be initialized during testing/migrations
   }
 
   return sendSuccess(res, {
     settings: settingsPayload,
+  });
+});
+
+export const getAppearance = asyncHandler(async (_req, res) => {
+  const settings = await FeatureSettings.getSettings();
+  return sendSuccess(res, {
+    appearance: settings.appearance,
+  });
+});
+
+export const updateAppearance = asyncHandler(async (req, res) => {
+  const appearanceData = req.body;
+  const settings = await FeatureSettings.getSettings();
+
+  if (appearanceData && typeof appearanceData === 'object') {
+    settings.appearance = {
+      ...(settings.appearance ? settings.appearance.toObject?.() || settings.appearance : {}),
+      ...appearanceData,
+    };
+    settings.markModified('appearance');
+  }
+
+  await settings.save();
+
+  try {
+    const io = getIO();
+    io.emit('appearance:updated', { appearance: settings.appearance });
+    io.emit('features:updated', { settings });
+  } catch {
+    // Socket error safety
+  }
+
+  return sendSuccess(res, {
+    appearance: settings.appearance,
   });
 });
