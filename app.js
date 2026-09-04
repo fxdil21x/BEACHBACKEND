@@ -118,8 +118,14 @@ app.get('/', (_req, res) => {
   res.json({ status: 'ok', message: 'Muzhappilangad Beach Safety API Server is running', health: '/api/health' });
 });
 
-app.get('/api/health', (_req, res) => {
-  res.json({ status: 'ok', service: 'Muzhappilangad Beach API', db: getDBStatus() });
+app.get(['/health', '/api/health', '/ping'], (_req, res) => {
+  res.json({
+    status: 'ok',
+    service: 'Muzhappilangad Beach API',
+    uptime: Math.floor(process.uptime()),
+    timestamp: new Date().toISOString(),
+    db: getDBStatus()
+  });
 });
 
 app.use('/api', requireDBConnection);

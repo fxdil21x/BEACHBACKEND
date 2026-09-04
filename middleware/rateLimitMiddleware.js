@@ -31,10 +31,12 @@ export const generalApiRateLimit = rateLimit({
   keyGenerator: getClientIp,
   validate: { ip: false, xForwardedForHeader: false, default: false },
   skip: (req) => {
-    // Never rate-limit health checks, features check, or continuous location telemetry
+    // Never rate-limit health checks, ping, features check, or continuous location telemetry
     const url = req.originalUrl || req.url;
     return (
-      url.includes('/api/health') ||
+      url === '/' ||
+      url.includes('/health') ||
+      url.includes('/ping') ||
       url.includes('/api/public/features') ||
       url.includes('/api/features') ||
       url.includes('/api/user/location')
