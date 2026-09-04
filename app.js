@@ -85,8 +85,8 @@ const buildAllowedOrigins = () => {
 
 export const allowedOrigins = buildAllowedOrigins();
 
-console.log('Allowed Origins:', Array.from(allowedOrigins));
-console.log('CLIENT_URL env:', process.env.CLIENT_URL);
+const isLocalDevOrigin = (origin) =>
+  /^https?:\/\/(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+|172\.(1[6-9]|2[0-9]|3[01])\.\d+\.\d+)(:\d+)?$/.test(origin);
 
 const isAllowedOrigin = (origin) => {
   if (!origin || origin === 'null') return true;
