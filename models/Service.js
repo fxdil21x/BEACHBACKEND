@@ -150,7 +150,7 @@ const serviceSchema = new mongoose.Schema(
       },
       categories: {
         type: [String],
-        default: ['Main Course', 'Starters', 'Seafood Specials', 'Breads & Rice', 'Snacks & Quick Bites', 'Desserts', 'Beverages'],
+        default: [],
       },
       menuItems: [menuItemSchema],
     },

@@ -226,7 +226,7 @@ export const addMenuItem = async (req, res) => {
       service.restaurantDetails = { menuItems: [], categories: [] };
     }
     if (!service.restaurantDetails.categories) {
-      service.restaurantDetails.categories = ['Main Course', 'Starters', 'Seafood Specials', 'Breads & Rice', 'Snacks & Quick Bites', 'Desserts', 'Beverages'];
+      service.restaurantDetails.categories = [];
     }
     if (itemCat && !service.restaurantDetails.categories.includes(itemCat)) {
       service.restaurantDetails.categories.push(itemCat);
@@ -268,7 +268,7 @@ export const updateMenuItem = async (req, res) => {
       const updatedCat = String(updateFields.category).trim();
       menuItem.category = updatedCat;
       if (!service.restaurantDetails.categories) {
-        service.restaurantDetails.categories = ['Main Course', 'Starters', 'Seafood Specials', 'Breads & Rice', 'Snacks & Quick Bites', 'Desserts', 'Beverages'];
+        service.restaurantDetails.categories = [];
       }
       if (updatedCat && !service.restaurantDetails.categories.includes(updatedCat)) {
         service.restaurantDetails.categories.push(updatedCat);
