@@ -8,7 +8,7 @@ const menuItemSchema = new mongoose.Schema({
   },
   category: {
     type: String,
-    enum: ['Starters', 'Main Course', 'Seafood Specials', 'Breads & Rice', 'Snacks & Quick Bites', 'Desserts', 'Beverages', 'Other'],
+    trim: true,
     default: 'Main Course',
   },
   type: {
@@ -147,6 +147,10 @@ const serviceSchema = new mongoose.Schema(
       foodTypes: {
         type: [String],
         default: ['all'],
+      },
+      categories: {
+        type: [String],
+        default: ['Main Course', 'Starters', 'Seafood Specials', 'Breads & Rice', 'Snacks & Quick Bites', 'Desserts', 'Beverages'],
       },
       menuItems: [menuItemSchema],
     },

@@ -210,9 +210,10 @@ export const addMenuItem = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Service is not a restaurant.' });
     }
 
+    const itemCat = (category || 'Main Course').trim();
     const newItem = {
       name: name.trim(),
-      category: category || 'Main Course',
+      category: itemCat,
       type: type || 'non-veg',
       price: Number(price),
       description: description || '',
@@ -222,7 +223,13 @@ export const addMenuItem = async (req, res) => {
     };
 
     if (!service.restaurantDetails) {
-      service.restaurantDetails = { menuItems: [] };
+      service.restaurantDetails = { menuItems: [], categories: [] };
+    }
+    if (!service.restaurantDetails.categories) {
+      service.restaurantDetails.categories = ['Main Course', 'Starters', 'Seafood Specials', 'Breads & Rice', 'Snacks & Quick Bites', 'Desserts', 'Beverages'];
+    }
+    if (itemCat && !service.restaurantDetails.categories.includes(itemCat)) {
+      service.restaurantDetails.categories.push(itemCat);
     }
     service.restaurantDetails.menuItems.push(newItem);
 
@@ -257,7 +264,16 @@ export const updateMenuItem = async (req, res) => {
 
     // Apply updates
     if (updateFields.name !== undefined) menuItem.name = updateFields.name;
-    if (updateFields.category !== undefined) menuItem.category = updateFields.category;
+    if (updateFields.category !== undefined) {
+      const updatedCat = String(updateFields.category).trim();
+      menuItem.category = updatedCat;
+      if (!service.restaurantDetails.categories) {
+        service.restaurantDetails.categories = ['Main Course', 'Starters', 'Seafood Specials', 'Breads & Rice', 'Snacks & Quick Bites', 'Desserts', 'Beverages'];
+      }
+      if (updatedCat && !service.restaurantDetails.categories.includes(updatedCat)) {
+        service.restaurantDetails.categories.push(updatedCat);
+      }
+    }
     if (updateFields.type !== undefined) menuItem.type = updateFields.type;
     if (updateFields.price !== undefined) menuItem.price = Number(updateFields.price);
     if (updateFields.description !== undefined) menuItem.description = updateFields.description;
