@@ -146,6 +146,11 @@ export function initSocket(server, allowedOrigins) {
         activeEmergencies.set(emergencyId, emergency);
       }
 
+      // Join emergency room for signaling
+      if (emergencyId) {
+        socket.join(`emergency:${emergencyId}`);
+      }
+
       // Broadcast emergency:claimed to ALL active admins so their audio & vibration stop immediately
       io.to('admins').emit('emergency:claimed', {
         emergencyId,
@@ -191,7 +196,12 @@ export function initSocket(server, allowedOrigins) {
     // payload: { emergencyId, userId, sdp, adminId, adminName }
     socket.on('call:offer', (data) => {
       const { userId, emergencyId, sdp, adminId, adminName } = data;
-      console.log(`[Socket] call:offer from admin ${adminId} → emergency: ${emergencyId} (user: ${userId})`);
+      console.log(`[Socket] call:offer from admin ${adminId} (socket: ${socket.id}) → emergency: ${emergencyId} (user: ${userId})`);
+      
+      if (emergencyId) {
+        socket.join(`emergency:${emergencyId}`);
+      }
+
       const payload = {
         emergencyId,
         adminId,
@@ -218,23 +228,45 @@ export function initSocket(server, allowedOrigins) {
     socket.on('call:answer', (data) => {
       const { adminSocketId, emergencyId, sdp } = data;
       console.log(`[Socket] call:answer from user socket ${socket.id} → admin socket ${adminSocketId}`);
+      
+      if (emergencyId) {
+        socket.join(`emergency:${emergencyId}`);
+      }
+
+      const answerPayload = {
+        emergencyId,
+        sdp,
+        userSocketId: socket.id,
+      };
+
       if (adminSocketId) {
-        io.to(adminSocketId).emit('call:answered', {
-          emergencyId,
-          sdp,
-          userSocketId: socket.id,
-        });
+        io.to(adminSocketId).emit('call:answered', answerPayload);
+      }
+      if (emergencyId) {
+        socket.to(`emergency:${emergencyId}`).emit('call:answered', answerPayload);
       }
     });
 
-    // ICE candidate exchange — relay to specific target socket or emergency room
-    // payload: { targetSocketId, emergencyId, candidate }
+    // ICE candidate exchange — relay to target socket, emergency room, user room, and active emergency socket
+    // payload: { targetSocketId, emergencyId, userId, candidate }
     socket.on('call:ice-candidate', (data) => {
-      const { targetSocketId, emergencyId, candidate } = data;
+      const { targetSocketId, emergencyId, userId, candidate } = data;
+      if (!candidate) return;
+
+      const candPayload = { candidate, fromSocketId: socket.id, emergencyId };
+
       if (targetSocketId) {
-        io.to(targetSocketId).emit('call:ice-candidate', { candidate, fromSocketId: socket.id });
-      } else if (emergencyId) {
-        socket.to(`emergency:${emergencyId}`).emit('call:ice-candidate', { candidate, fromSocketId: socket.id });
+        io.to(targetSocketId).emit('call:ice-candidate', candPayload);
+      }
+      if (emergencyId) {
+        socket.to(`emergency:${emergencyId}`).emit('call:ice-candidate', candPayload);
+      }
+      if (userId && userId !== 'ANONYMOUS') {
+        socket.to(`user:${userId}`).emit('call:ice-candidate', candPayload);
+      }
+      const emg = emergencyId ? activeEmergencies.get(emergencyId) : null;
+      if (emg?.socketId && emg.socketId !== socket.id && emg.socketId !== targetSocketId) {
+        io.to(emg.socketId).emit('call:ice-candidate', candPayload);
       }
     });
 
